@@ -262,8 +262,6 @@
       }
     } catch (e) {}
 
-    const isCloudMode = params.get('cloud') === '1' || params.get('stay') === '1';
-    const isLocal = isLocalHostName(window.location.hostname);
     const savedToken = localStorage.getItem('desktop_auth_token');
 
     // Agar token saqlangan bo'lsa: Blok va Auth ni bir vaqtda tekshiramiz
@@ -293,25 +291,11 @@
 
         if (authRes && authRes.ok) {
           const authData = await authRes.json().catch(() => null);
-          if (authData) {
-            // Bir xil Wi-Fi da ekanligi aniqlansa: Vercel'dan local serverga darhol avtomatik o'tish
-            if (authData.isSameNetwork && !isLocal && !isCloudMode) {
-              const destHost = authData.lanHost || lanHost || '192.168.1.106:7777';
-              const currentToken = authData.token || savedToken || authToken || '';
-              const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
-              window.location.replace(`http://${destHost}/desktop/${tokenParam}`);
-              return;
-            }
-
-            if (authData.authenticated) {
-              authToken = authData.token || savedToken;
-              currentUsername = authData.username || localStorage.getItem('desktop_username') || 'muhamad';
-              if (authData.lanUrl) {
-                updateLanTip(authData.lanUrl);
-              }
-              showWelcomeView(currentUsername);
-              return;
-            }
+          if (authData && authData.authenticated) {
+            authToken = authData.token || savedToken;
+            currentUsername = authData.username || localStorage.getItem('desktop_username') || 'muhamad';
+            showWelcomeView(currentUsername);
+            return;
           }
         }
       } catch (e) {}
@@ -319,44 +303,17 @@
       localStorage.removeItem('desktop_auth_token');
       authToken = null;
     } else {
-      // Token bo'lmaganda: check-auth orqali bir xil Wi-Fi ekanligini tekshiramiz
       try {
-        const [authRes, blockRes] = await Promise.all([
-          fetch(getApiUrl('/api/check-auth'), {
-            headers: { 'ngrok-skip-browser-warning': 'true' }
-          }).catch(() => null),
-          fetch(getApiUrl('/api/check-block'), {
-            headers: { 'ngrok-skip-browser-warning': 'true' }
-          }).catch(() => null)
-        ]);
-
+        const blockRes = await fetch(getApiUrl('/api/check-block'), {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        }).catch(() => null);
         if (blockRes && blockRes.ok) {
           const blockData = await blockRes.json().catch(() => null);
           if (blockData && blockData.blocked && blockData.retryAfterSeconds) {
             startBlockCountdown(blockData.retryAfterSeconds);
           }
         }
-
-        if (authRes && authRes.ok) {
-          const authData = await authRes.json().catch(() => null);
-          if (authData && authData.isSameNetwork && !isLocal && !isCloudMode) {
-            const destHost = authData.lanHost || lanHost || '192.168.1.106:7777';
-            window.location.replace(`http://${destHost}/desktop/`);
-            return;
-          }
-        }
       } catch (e) {}
-    }
-
-    // Secondary fallback: prob tekshiruvi
-    if (!isLocal && !isCloudMode) {
-      const isHome = await checkLocalWifi(lanHost, 1000);
-      if (isHome) {
-        const currentToken = localStorage.getItem('desktop_auth_token') || authToken || '';
-        const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
-        window.location.replace(`http://${lanHost}/desktop/${tokenParam}`);
-        return;
-      }
     }
 
     showView('login-view');
@@ -1595,28 +1552,6 @@
           localStorage.setItem('desktop_username', currentUsername);
 
           if (passwordInput) passwordInput.value = '';
-          if (data.lanUrl) {
-            updateLanTip(data.lanUrl);
-          }
-
-          const isCloudMode = new URLSearchParams(window.location.search).get('cloud') === '1';
-          if (!isLocalHostName(window.location.hostname) && !isCloudMode) {
-            const destHost = data.lanHost || (data.lanIp ? `${data.lanIp}:7777` : '192.168.1.106:7777');
-            if (data.isSameNetwork) {
-              showView('splash-view');
-              window.location.replace(`http://${destHost}/desktop/?token=${encodeURIComponent(authToken)}`);
-              return;
-            }
-            const isHome = await checkLocalWifi(destHost, 1000);
-            if (isHome) {
-              showView('splash-view');
-              window.location.replace(`http://${destHost}/desktop/?token=${encodeURIComponent(authToken)}`);
-              return;
-            }
-            showWelcomeView(currentUsername);
-            return;
-          }
-
           showWelcomeView(currentUsername);
         } else {
           if (data.retryAfterSeconds) {
