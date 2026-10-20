@@ -789,8 +789,6 @@
 
   function startStreamWatchdog() {
     stopStreamWatchdog();
-    lastVideoTime = -1;
-    lastProgressTs = Date.now();
 
     streamWatchdogTimer = setInterval(() => {
       if (currentView !== 'screen-view') return;
@@ -802,22 +800,13 @@
         innerVideo.play().catch(() => {});
       }
 
-      // 2. Kadr muzlab qolganligini tekshirish (currentTime o'zgarishi lozim)
-      const curTime = innerVideo.currentTime;
-      if (curTime > 0.1 && Math.abs(curTime - lastVideoTime) < 0.05) {
-        // Agar 6 soniyadan ko'proq bir xil kadrda to'xtab qolsa (muzlagan)
-        if (Date.now() - lastProgressTs > 6000) {
-          console.warn('[Watchdog] Tasvir oqimi to‘xtab qolgani aniqlandi. Avtomatik tiklanmoqda...');
-          lastProgressTs = Date.now();
-          if (videoEl && typeof videoEl.onconnect === 'function') {
-            videoEl.onconnect();
-          }
+      // 2. Agar WebSocket yoki WebRTC uzilib qolgan bo'lsa, avtomatik qayta tiklaymiz
+      if (videoEl.wsState === WebSocket.CLOSED && videoEl.pcState === WebSocket.CLOSED) {
+        if (typeof videoEl.onconnect === 'function') {
+          videoEl.onconnect();
         }
-      } else {
-        lastVideoTime = curTime;
-        lastProgressTs = Date.now();
       }
-    }, 3000);
+    }, 2000);
   }
 
   function stopStreamWatchdog() {

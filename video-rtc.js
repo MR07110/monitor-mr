@@ -542,15 +542,6 @@ class VideoRTC extends HTMLElement {
         this.video.srcObject = this._mediaStream;
 
         pc.ontrack = ev => {
-            if (ev.receiver) {
-                try { ev.receiver.playoutDelayHint = 0; } catch (e) {}
-            }
-            if (pc.getReceivers) {
-                pc.getReceivers().forEach(r => {
-                    try { r.playoutDelayHint = 0; } catch (e) {}
-                });
-            }
-
             if (ev.track) {
                 if (!this._mediaStream.getTracks().includes(ev.track)) {
                     this._mediaStream.addTrack(ev.track);
