@@ -543,12 +543,10 @@ class VideoRTC extends HTMLElement {
 
         pc.ontrack = ev => {
             if (ev.receiver) {
-                try { ev.receiver.jitterBufferTarget = 0; } catch (e) {}
                 try { ev.receiver.playoutDelayHint = 0; } catch (e) {}
             }
             if (pc.getReceivers) {
                 pc.getReceivers().forEach(r => {
-                    try { r.jitterBufferTarget = 0; } catch (e) {}
                     try { r.playoutDelayHint = 0; } catch (e) {}
                 });
             }
@@ -566,18 +564,6 @@ class VideoRTC extends HTMLElement {
                 });
             }
             this.play();
-            if (!this._liveSyncBound) {
-                this._liveSyncBound = true;
-                this.video.addEventListener('timeupdate', () => {
-                    if (this.video.buffered && this.video.buffered.length > 0) {
-                        const end = this.video.buffered.end(this.video.buffered.length - 1);
-                        const diff = end - this.video.currentTime;
-                        if (diff > 0.20) {
-                            this.video.currentTime = end;
-                        }
-                    }
-                });
-            }
             this.dispatchEvent(new CustomEvent('webrtc-track', { detail: { kind: ev.track ? ev.track.kind : 'unknown' } }));
             this.pcState = WebSocket.OPEN;
         };
