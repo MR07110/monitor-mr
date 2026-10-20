@@ -587,6 +587,16 @@
 
   async function toggleMic() {
     if (!videoEl) return;
+    // Brauzer xavfsizlik talabi: agar HTTP orqali kirilgan bo'lsa, xuddi shu portda (7777) HTTPS ga o'tkazish
+    if (window.location.protocol === 'http:' && !window.isSecureContext) {
+      const httpsUrl = 'https://' + window.location.host + window.location.pathname + window.location.search;
+      showToast("🔒 Mikrofon xavfsiz rejimni talab qiladi. Shu portda HTTPS ga o‘tilmoqda...", false);
+      setTimeout(() => {
+        window.location.href = httpsUrl;
+      }, 600);
+      return;
+    }
+
     let res = false;
     if (typeof videoEl.toggleMic === 'function') {
       res = await videoEl.toggleMic();
@@ -597,11 +607,7 @@
     }
 
     if (!res && (!videoEl.micStream || !videoEl.micStream.active)) {
-      if (window.location.protocol === 'http:' && !window.isSecureContext) {
-        showToast("🔒 Mikrofon uchun: https://" + window.location.hostname + ":7443 orqali kiring", true);
-      } else {
-        showToast("❌ Mikrofon ruxsati berilmadi yoki mavjud emas", true);
-      }
+      showToast("❌ Mikrofon ruxsati berilmadi yoki qurilma topilmadi", true);
       isMicActive = false;
     } else {
       isMicActive = !!res;
