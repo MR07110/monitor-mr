@@ -666,9 +666,21 @@
         } catch (e) {}
       };
 
+      const unlockAudio = () => {
+        try {
+          const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
+          if (innerVideo && innerVideo.muted) {
+            innerVideo.muted = false;
+            innerVideo.play().then(() => {
+              updateAudioUI(false);
+            }).catch(() => {});
+          }
+        } catch (e) {}
+      };
+
       triggerPlay();
-      window.addEventListener('click', triggerPlay, { once: true });
-      window.addEventListener('touchstart', triggerPlay, { once: true });
+      window.addEventListener('click', unlockAudio);
+      window.addEventListener('touchstart', unlockAudio, { passive: true });
 
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
       if (innerVideo) {

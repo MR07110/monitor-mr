@@ -684,6 +684,20 @@ class VideoRTC extends HTMLElement {
                 } else {
                     this.micTransceiver = pc.addTransceiver('audio', {direction: 'sendonly'});
                 }
+                if (this.micTransceiver && 'setCodecPreferences' in this.micTransceiver && window.RTCRtpSender && RTCRtpSender.getCapabilities) {
+                    try {
+                        const caps = RTCRtpSender.getCapabilities('audio');
+                        if (caps && caps.codecs) {
+                            const pcma = caps.codecs.filter(c => /pcma/i.test(c.mimeType));
+                            const pcmu = caps.codecs.filter(c => /pcmu/i.test(c.mimeType));
+                            const opus = caps.codecs.filter(c => /opus/i.test(c.mimeType));
+                            const rest = caps.codecs.filter(c => !/pcma|pcmu|opus/i.test(c.mimeType));
+                            this.micTransceiver.setCodecPreferences([...pcma, ...pcmu, ...opus, ...rest]);
+                        }
+                    } catch (e) {
+                        console.warn('[VideoRTC] setCodecPreferences:', e);
+                    }
+                }
             }
         } catch (e) {
             console.warn('[VideoRTC] Mic error:', e);
@@ -717,8 +731,7 @@ class VideoRTC extends HTMLElement {
                         echoCancellation: true,
                         noiseSuppression: true,
                         autoGainControl: true,
-                        channelCount: 1,
-                        sampleRate: 48000
+                        channelCount: 1
                     }
                 });
                 const track = this.micStream.getAudioTracks()[0];
