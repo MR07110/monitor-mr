@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>MONITOR</title>
+  <title>MONITOR SHELL</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="apple-touch-icon" href="./favicon.svg">
-  <link rel="stylesheet" href="./style.css?v=3.8">
+  <link rel="stylesheet" href="./style.css?v=4.0">
   <link rel="stylesheet" href="./xterm.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="./video-rtc.js"></script>
   <script src="./xterm.js"></script>
   <script src="./xterm-addon-fit.js"></script>
 </head>
@@ -24,40 +23,35 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="app-logo splash-logo">
           <circle cx="50" cy="50" r="50" fill="black" />
           <g fill="white">
-            <rect x="22" y="26" width="56" height="36" rx="3" ry="3" />
-            <rect x="46" y="62" width="8" height="8" />
-            <rect x="36" y="70" width="28" height="4" rx="1.5" ry="1.5" />
-            <rect x="25" y="29" width="50" height="30" fill="black" rx="1" ry="1" />
+            <polyline points="28 42 42 50 28 58" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <line x1="48" y1="58" x2="68" y2="58" stroke="#00ff66" stroke-width="6" stroke-linecap="round" />
           </g>
         </svg>
       </div>
-      <h1 class="splash-title">MONITOR</h1>
+      <h1 class="splash-title">MONITOR SHELL</h1>
       <div class="splash-loader">
         <div class="splash-bar"></div>
       </div>
     </div>
   </div>
 
-  <!-- 1. LOGIN -->
+  <!-- 1. LOGIN VIEW -->
   <div id="login-view" class="view hidden">
     <div class="login-container">
-      <!-- MONITOR LOGO -->
       <div class="logo-wrapper">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="app-logo">
           <circle cx="50" cy="50" r="50" fill="black" />
-          <g fill="white">
-            <rect x="22" y="26" width="56" height="36" rx="3" ry="3" />
-            <rect x="46" y="62" width="8" height="8" />
-            <rect x="36" y="70" width="28" height="4" rx="1.5" ry="1.5" />
-            <rect x="25" y="29" width="50" height="30" fill="black" rx="1" ry="1" />
+          <g fill="none">
+            <polyline points="28 42 42 50 28 58" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="48" y1="58" x2="68" y2="58" stroke="#00ff66" stroke-width="6" stroke-linecap="round" />
           </g>
         </svg>
       </div>
 
       <div class="card">
         <div class="header">
-          <h1>MONITOR</h1>
-          <p>Xavfsiz jonli ekran oqimi</p>
+          <h1>MONITOR SHELL</h1>
+          <p>Xavfsiz masofaviy terminal</p>
         </div>
 
         <form id="login-form">
@@ -77,307 +71,22 @@
     </div>
   </div>
 
-  <!-- 2. WELCOME / MODE SELECTION MENU -->
-  <div id="welcome-view" class="view hidden">
-    <div class="welcome-container">
-      <div class="logo-wrapper">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="app-logo">
-          <circle cx="50" cy="50" r="50" fill="black" />
-          <g fill="white">
-            <rect x="22" y="26" width="56" height="36" rx="3" ry="3" />
-            <rect x="46" y="62" width="8" height="8" />
-            <rect x="36" y="70" width="28" height="4" rx="1.5" ry="1.5" />
-            <rect x="25" y="29" width="50" height="30" fill="black" rx="1" ry="1" />
-          </g>
-        </svg>
-      </div>
-
-      <div class="welcome-card">
-        <div class="welcome-header">
-          <div class="welcome-badge">
-            <span class="pulse-dot"></span>
-            <span>TIZIM TAYYOR</span>
-          </div>
-          <h1 id="welcome-user">MONITOR</h1>
-          <p>Ish rejimini tanlang</p>
-          <div id="net-tip" class="net-tip hidden">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
-            <span>Wi-Fi tarmog‘idasizmi? 0ms maksimal tezlik: <a id="local-wifi-link" href="#" target="_blank">Lokal Wi-Fi ga o‘tish</a></span>
-          </div>
-        </div>
-
-        <div class="mode-grid">
-          <!-- REJIM 1: JONLI EKRAN -->
-          <div id="mode-screen-btn" class="mode-card">
-            <div class="mode-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </svg>
-            </div>
-            <div class="mode-info">
-              <h3>Jonli Ekran (Monitor)</h3>
-              <p>Real-time WebRTC video, 2 tomonlama audio va mikrofon</p>
-            </div>
-            <div class="mode-arrow">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-
-          <!-- REJIM 2: ORIGINAL INTERAKTIV TERMINAL -->
-          <div id="mode-pty-btn" class="mode-card">
-            <div class="mode-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 17 10 11 4 5"></polyline>
-                <line x1="12" y1="19" x2="20" y2="19"></line>
-              </svg>
-            </div>
-            <div class="mode-info">
-              <h3>Shell Terminal (Original)</h3>
-              <p>Haqiqiy 1:1 interaktiv PTY terminal (fish, sudo, htop, vim)</p>
-            </div>
-            <div class="mode-arrow">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" id="logout-btn" class="logout-link">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          Tizimdan chiqish
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. TAYMER (10 SONIYA) VA PRE-WARM -->
-  <div id="countdown-view" class="view hidden">
-    <div class="countdown-box">
-      <div id="countdown-num" class="timer-display">10</div>
-      
-      <div class="tip-card">
-        <div class="tip-title">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-          </svg>
-          <span>TO'LIQ EKRAN REJIMI</span>
-        </div>
-        <p class="tip-text">
-          Hozir ekraningiz avtomatik <strong>to'liq ekran (fullscreen)</strong> bo'ladi.<br>
-          Ekranga <strong>2 marta tez bossangiz</strong> fullscreen dan chiqasiz, yana <strong>2 marta tez bossangiz</strong> qayta kirasiz.
-        </p>
-      </div>
-
-      <div class="bar-track">
-        <div id="progress-bar" class="bar-fill"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. SOF EKRAN -->
-  <div id="screen-view" class="view hidden">
-    <!-- 4.1 CHROYLI VISUAL SPLASH OVERLAY (ULANGUNCHA CHEKSIZ) -->
-    <div id="screen-splash" class="screen-splash">
-      <div class="splash-card">
-        <!-- ANIMATED RADAR / PULSE SPINNER -->
-        <div class="splash-animation">
-          <div class="splash-ring ring-1"></div>
-          <div class="splash-ring ring-2"></div>
-          <div class="splash-ring ring-3"></div>
-          <div class="splash-core">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-              <line x1="8" y1="21" x2="16" y2="21"></line>
-              <line x1="12" y1="17" x2="12" y2="21"></line>
-            </svg>
-          </div>
-        </div>
-
-        <div class="splash-content">
-          <div class="splash-badge">
-            <span class="splash-dot"></span>
-            <span id="splash-status-badge">ULANMOQDA</span>
-          </div>
-          <h2 class="splash-title">Jonli Ekran Ulanishi</h2>
-          <p id="splash-desc" class="splash-desc">Kompyuter bilan xavfsiz apparat oqimi o‘rnatilmoqda...</p>
-
-          <!-- JONLI BOSQICHLAR KO'RSATGICHI -->
-          <div class="splash-steps">
-            <div id="step-handshake" class="splash-step active">
-              <span class="step-indicator"></span>
-              <span>1. WebRTC xavfsiz kanali</span>
-            </div>
-            <div id="step-media" class="splash-step">
-              <span class="step-indicator"></span>
-              <span>2. Apparat H.264 & Audio</span>
-            </div>
-            <div id="step-live" class="splash-step">
-              <span class="step-indicator"></span>
-              <span>3. Jonli efir (0 ms kechikish)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ORQAGA QAYTISH TUGMASI -->
-        <button id="splash-cancel-btn" type="button" class="splash-cancel-btn">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          Bekor qilish
-        </button>
-      </div>
-    </div>
-
-    <video-rtc id="screen-video"></video-rtc>
-
-    <!-- ZAMONAVIY FLOATING BOTTOM BAR -->
-    <div id="screen-bottombar" class="screen-bottombar">
-      <!-- 1. DASHBOARD / BOSH MENYU -->
-      <button id="bar-dashboard-btn" class="bar-btn" type="button" title="Bosh menyu">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-          <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-          <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-          <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
-        </svg>
-      </button>
-
-      <!-- 2. PAUSE / PLAY -->
-      <button id="bar-pause-btn" class="bar-btn" type="button" title="Pauza / Davom ettirish">
-        <svg id="bar-icon-pause" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-        </svg>
-        <svg id="bar-icon-play" class="hidden" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-      </button>
-
-
-      <!-- 5. SHELL TERMINAL -->
-      <button id="bar-shell-btn" class="bar-btn" type="button" title="Shell Terminal">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4 17 10 11 4 5"></polyline>
-          <line x1="12" y1="19" x2="20" y2="19"></line>
-        </svg>
-      </button>
-
-      <!-- 6. TO'LIQ EKRAN (FULLSCREEN) -->
-      <button id="bar-fullscreen-btn" class="bar-btn" type="button" title="To'liq ekran">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-        </svg>
-      </button>
-
-      <!-- 7. 3-NUQTA (MORE MENU) -->
-      <div class="bar-more-wrapper">
-        <button id="bar-more-btn" class="bar-btn" type="button" title="Ko'proq">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="5" r="1.5"></circle>
-            <circle cx="12" cy="12" r="1.5"></circle>
-            <circle cx="12" cy="19" r="1.5"></circle>
-          </svg>
-        </button>
-
-        <!-- MORE DROPUP POPUP -->
-        <div id="bar-more-menu" class="bar-more-menu hidden">
-          <!-- PICTURE IN PICTURE -->
-          <button id="menu-pip-btn" class="menu-item" type="button">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-              <rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor"></rect>
-            </svg>
-            <span>Picture-in-Picture (PiP)</span>
-          </button>
-
-          <!-- QAYTA ULANISH (RECONNECT) -->
-          <button id="menu-reconnect-btn" class="menu-item" type="button">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M23 4v6h-6"></path>
-              <path d="M1 20v-6h6"></path>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-            <span>Qayta ulanish (Reconnect)</span>
-          </button>
-
-          <!-- TARMOQ REJIMI (LOKAL / BULUT RELAY) -->
-          <button id="menu-relay-btn" class="menu-item" type="button" title="Routerda qotish bo'lsa Bulut Relay ga o'tkazish">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-              <line x1="12" y1="20" x2="12.01" y2="20"></line>
-            </svg>
-            <span id="menu-relay-text">Tarmoq: Lokal Wi-Fi (Tez)</span>
-          </button>
-
-          <!-- SIFAT VA FPS HOLATI -->
-          <div class="menu-divider"></div>
-          <div class="menu-info-badge">
-            <span class="pulse-dot"></span>
-            <span id="menu-stream-info">20 FPS • H.264 Baseline • 500 Kbps</span>
-          </div>
-          <div class="menu-divider"></div>
-
-          <!-- TIZIMDAN CHIQISH -->
-          <button id="menu-logout-btn" class="menu-item danger" type="button">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Tizimdan chiqish</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. SHELL TERMINAL VIEW -->
-  <div id="shell-view" class="view hidden">
-    <!-- SUZUVCHI VA SURILADIGAN CHIQISH TUGMASI (CIRCLE X FLOAT) -->
-    <button id="shell-float-exit-btn" class="pty-float-btn" type="button" title="Bosh menyu (Dashboard)">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-
-    <div id="terminal-screen" class="terminal-screen">
-      <div id="terminal-history" class="terminal-history"></div>
-      <div class="terminal-active-line">
-        <span class="prompt-tag">[I]</span>
-        <span class="prompt-arrow">&gt;</span>
-        <div class="terminal-input-wrap">
-          <div class="terminal-ghost" aria-hidden="true">
-            <span id="ghost-hidden" class="ghost-hidden"></span>
-            <span id="ghost-suggestion" class="ghost-suggestion"></span>
-          </div>
-          <input type="text" id="terminal-input" class="terminal-input" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. SHELL TERMINAL (ORIGINAL 1:1 PTY) VIEW -->
+  <!-- 2. PTY TERMINAL (1:1 XTERM INTERACTIVE SHELL) -->
   <div id="pty-view" class="view hidden">
-    <!-- SUZUVCHI VA SURILADIGAN CHIQISH TUGMASI (CIRCLE X FLOAT) -->
-    <button id="pty-float-exit-btn" class="pty-float-btn" type="button" title="Bosh menyu (Dashboard)">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
+    <!-- PTY HEADER BAR -->
+    <div class="pty-header-bar">
+      <div class="pty-header-left">
+        <span class="pty-title">🐚 SHELL</span>
+        <span id="pty-status-badge" class="pty-badge connecting">Ulanmoqda...</span>
+        <span id="pty-net-badge" class="pty-badge local">Aniqlanmoqda...</span>
+      </div>
+      <div class="pty-header-right">
+        <a id="pty-lan-switch-btn" class="pty-action-btn lan-btn hidden" href="#" title="Lokal Wi-Fi ga to‘g‘ridan-to‘g‘ri o‘tish (0ms)">⚡ Lokal Wi-Fi</a>
+        <button id="pty-reconnect-btn" class="pty-action-btn" type="button" title="Qayta ulanish">🔄</button>
+        <button id="pty-fullscreen-btn" class="pty-action-btn" type="button" title="To‘liq ekran">⛶</button>
+        <button id="pty-logout-btn" class="pty-action-btn danger" type="button" title="Chiqish">Chiqish</button>
+      </div>
+    </div>
 
     <!-- PTY XTERM CONTAINER -->
     <div id="pty-terminal-wrapper" class="pty-terminal-wrapper">
@@ -399,6 +108,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=3.8"></script>
+  <script src="./app.js?v=4.0"></script>
 </body>
 </html>

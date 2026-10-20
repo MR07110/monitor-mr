@@ -1430,3 +1430,105 @@ video-rtc,
   color: var(--text-main);
   border-color: rgba(255, 255, 255, 0.15);
 }
+
+/* ================= 9. PTY TERMINAL HEADER BAR ================= */
+.pty-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #0d0d0d;
+  border-bottom: 1px solid #222222;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #cccccc;
+  user-select: none;
+  flex-shrink: 0;
+  z-index: 10;
+  gap: 8px;
+}
+
+.pty-header-left, .pty-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pty-title {
+  font-weight: 700;
+  color: var(--accent-green);
+  letter-spacing: 0.5px;
+}
+
+.pty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  font-size: 11px;
+}
+
+.pty-badge.online {
+  color: #50fa7b;
+  border-color: rgba(80, 250, 123, 0.3);
+}
+
+.pty-badge.local {
+  color: #8be9fd;
+  border-color: rgba(139, 233, 253, 0.3);
+}
+
+.pty-badge.connecting {
+  color: #f1fa8c;
+  border-color: rgba(241, 250, 140, 0.3);
+}
+
+.pty-badge.error {
+  color: #ff5555;
+  border-color: rgba(255, 85, 85, 0.3);
+}
+
+.pty-action-btn {
+  background: #181818;
+  border: 1px solid #333333;
+  color: #cccccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.pty-action-btn:hover {
+  background: #252525;
+  color: #ffffff;
+  border-color: #555555;
+}
+
+.pty-action-btn.lan-btn {
+  background: rgba(139, 233, 253, 0.1);
+  color: #8be9fd;
+  border-color: rgba(139, 233, 253, 0.3);
+}
+
+.pty-action-btn.lan-btn:hover {
+  background: rgba(139, 233, 253, 0.2);
+}
+
+.pty-action-btn.danger {
+  color: #ff6e67;
+  border-color: rgba(255, 110, 103, 0.3);
+}
+
+.pty-action-btn.danger:hover {
+  background: rgba(255, 110, 103, 0.15);
+}

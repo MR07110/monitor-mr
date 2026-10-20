@@ -7,11 +7,8 @@
     return;
   }
 
-  // ================= 3. DOM ELEMENTLAR =================
-  // 0. Splash View
+  // ================= 2. DOM ELEMENTLAR =================
   const splashView = document.getElementById('splash-view');
-
-  // 1. Login View
   const loginView = document.getElementById('login-view');
   const loginForm = document.getElementById('login-form');
   const usernameInput = document.getElementById('username');
@@ -19,1565 +16,128 @@
   const submitBtn = document.getElementById('submit-btn');
   const loginError = document.getElementById('login-error');
 
-  // 2. Welcome View
-  const welcomeView = document.getElementById('welcome-view');
-  const welcomeUser = document.getElementById('welcome-user');
-  const modeScreenBtn = document.getElementById('mode-screen-btn');
-  const modeShellBtn = document.getElementById('mode-shell-btn');
-  const logoutBtn = document.getElementById('logout-btn');
-  const netTip = document.getElementById('net-tip');
-  const localWifiLink = document.getElementById('local-wifi-link');
-
-  // 3. Countdown View
-  const countdownView = document.getElementById('countdown-view');
-  const countdownNum = document.getElementById('countdown-num');
-  const progressBar = document.getElementById('progress-bar');
-
-  // 4. Screen View & Bottom Bar
-  const screenView = document.getElementById('screen-view');
-  const videoEl = document.getElementById('screen-video');
-  const screenBottombar = document.getElementById('screen-bottombar');
-  const barDashboardBtn = document.getElementById('bar-dashboard-btn');
-  const barPauseBtn = document.getElementById('bar-pause-btn');
-  const barIconPause = document.getElementById('bar-icon-pause');
-  const barIconPlay = document.getElementById('bar-icon-play');
-  const barAudioBtn = document.getElementById('bar-audio-btn');
-  const barIconAudioOn = document.getElementById('bar-icon-audio-on');
-  const barIconAudioOff = document.getElementById('bar-icon-audio-off');
-  const barMicBtn = document.getElementById('bar-mic-btn');
-  const barShellBtn = document.getElementById('bar-shell-btn');
-  const barFullscreenBtn = document.getElementById('bar-fullscreen-btn');
-  const barMoreBtn = document.getElementById('bar-more-btn');
-  const barMoreMenu = document.getElementById('bar-more-menu');
-  const menuPipBtn = document.getElementById('menu-pip-btn');
-  const menuReconnectBtn = document.getElementById('menu-reconnect-btn');
-  const menuRelayBtn = document.getElementById('menu-relay-btn');
-  const menuRelayText = document.getElementById('menu-relay-text');
-  const menuStreamInfo = document.getElementById('menu-stream-info');
-  const menuLogoutBtn = document.getElementById('menu-logout-btn');
-
-  // 4.1 Splash Overlay Elements
-  const screenSplash = document.getElementById('screen-splash');
-  const splashStatusBadge = document.getElementById('splash-status-badge');
-  const splashDesc = document.getElementById('splash-desc');
-  const splashCancelBtn = document.getElementById('splash-cancel-btn');
-  const stepHandshake = document.getElementById('step-handshake');
-  const stepMedia = document.getElementById('step-media');
-  const stepLive = document.getElementById('step-live');
-
-  // 5. Shell Terminal View
-  const shellView = document.getElementById('shell-view');
-  const shellCwdText = document.getElementById('shell-cwd-text');
-  const shellToScreenBtn = document.getElementById('shell-to-screen-btn');
-  const shellToMenuBtn = document.getElementById('shell-to-menu-btn');
-  const shellLogoutBtn = document.getElementById('shell-logout-btn');
-  const terminalScreen = document.getElementById('terminal-screen');
-  const terminalHistory = document.getElementById('terminal-history');
-  const terminalInput = document.getElementById('terminal-input');
-  const terminalActiveLine = document.querySelector('.terminal-active-line');
-  const ghostHidden = document.getElementById('ghost-hidden');
-  const ghostSuggestion = document.getElementById('ghost-suggestion');
-
-  // 6. Original PTY Terminal View
-  const modePtyBtn = document.getElementById('mode-pty-btn');
+  // PTY Terminal elementlari
   const ptyView = document.getElementById('pty-view');
-  const ptyStatusText = document.getElementById('pty-status-text');
-  const ptyToScreenBtn = document.getElementById('pty-to-screen-btn');
-  const ptyToShellBtn = document.getElementById('pty-to-shell-btn');
-  const ptyToMenuBtn = document.getElementById('pty-to-menu-btn');
+  const ptyStatusBadge = document.getElementById('pty-status-badge');
+  const ptyNetBadge = document.getElementById('pty-net-badge');
+  const ptyLanSwitchBtn = document.getElementById('pty-lan-switch-btn');
   const ptyReconnectBtn = document.getElementById('pty-reconnect-btn');
+  const ptyFullscreenBtn = document.getElementById('pty-fullscreen-btn');
   const ptyLogoutBtn = document.getElementById('pty-logout-btn');
   const ptyTerminalContainer = document.getElementById('pty-terminal-container');
   const ptyVirtualKeys = document.getElementById('pty-virtual-keys');
-  const ptyFloatExitBtn = document.getElementById('pty-float-exit-btn');
-  const shellFloatExitBtn = document.getElementById('shell-float-exit-btn');
 
-  // ================= 4. HOLAT (STATE) =================
+  // ================= 3. HOLAT (STATE) =================
   let authToken = localStorage.getItem('desktop_auth_token') || null;
   let currentUsername = localStorage.getItem('desktop_username') || '';
-  let remoteHost = localStorage.getItem('remote_desk_host') || '';
-  let currentCwd = '~';
-  const cmdHistory = [];
-  let cmdIndex = -1;
-  let shellHistory = [];
-  let currentSuggestion = '';
-  let isCommandRunning = false;
-  let runningCmdId = null;
-  let isMicActive = false;
-  let prewarmStarted = false;
-  let countdownTimer = null;
-  let blockCountdownTimer = null;
+  let remoteHost = localStorage.getItem('remote_desk_host') || 'satisfy-endurance-mooned.ngrok-free.dev';
+  let lanHost = '192.168.1.106:7777';
+  let currentView = 'splash-view';
 
-  let bottombarTimer = null;
+  let ptyTerm = null;
+  let ptyFitAddon = null;
+  let ptyWs = null;
+  let ptyReconnectTimer = null;
+  let pingTimer = null;
+  let lastPingTs = 0;
+  let isConnecting = false;
 
-  function showBottombar() {
-    if (!screenBottombar) return;
-    screenBottombar.classList.remove('hidden-bar');
-
-    if (bottombarTimer) clearTimeout(bottombarTimer);
-
-    // Agar 3-nuqta menyusi ochiq bo'lmasa 4 soniyadan keyin avtomatik yashiriladi
-    if (!barMoreMenu || barMoreMenu.classList.contains('hidden')) {
-      bottombarTimer = setTimeout(() => {
-        hideBottombar();
-      }, 4000);
-    }
-  }
-
-  function hideBottombar() {
-    if (!screenBottombar) return;
-    if (barMoreMenu) barMoreMenu.classList.add('hidden');
-    screenBottombar.classList.add('hidden-bar');
-  }
-
-  function toggleBottombar() {
-    if (!screenBottombar) return;
-    if (screenBottombar.classList.contains('hidden-bar')) {
-      showBottombar();
-    } else {
-      hideBottombar();
-    }
-  }
-
-  // ================= 5. VIEW BOSHQARUVI =================
+  // ================= 4. VIEW ALMASHTIRISH =================
   function showView(viewId) {
-    const views = [splashView, loginView, welcomeView, countdownView, screenView, shellView, ptyView];
-    views.forEach(v => {
-      if (v) {
-        if (v.id === viewId) {
-          v.classList.remove('hidden');
-        } else {
-          v.classList.add('hidden');
-        }
-      }
+    currentView = viewId;
+    [splashView, loginView, ptyView].forEach(v => {
+      if (v) v.classList.add('hidden');
     });
-
-    if (viewId !== 'screen-view' && viewId !== 'countdown-view') {
-      stopStream();
-      hideBottombar();
-    }
-
-    if (viewId !== 'pty-view') {
-      if (ptyWs) {
-        try { ptyWs.close(); } catch (_) {}
-        ptyWs = null;
-      }
-      if (ptyView) {
-        ptyView.style.height = '';
-        ptyView.style.top = '';
-        ptyView.classList.remove('keyboard-open');
-      }
-      if (ptyFloatExitBtn) {
-        ptyFloatExitBtn.style.left = '';
-        ptyFloatExitBtn.style.top = '';
-        ptyFloatExitBtn.style.right = '';
-        ptyFloatExitBtn.style.bottom = '';
-        ptyFloatExitBtn.classList.remove('is-custom-pos');
-      }
-    } else {
-      setTimeout(() => {
-        syncPtyViewport();
-      }, 50);
-    }
-
-    if (viewId === 'screen-view') {
-      showBottombar();
-    }
-
-    if (viewId === 'shell-view') {
-      initShellStreamSocket();
-      fetchShellHistory();
-      setTimeout(() => {
-        if (terminalInput) terminalInput.focus();
-      }, 60);
+    const target = document.getElementById(viewId);
+    if (target) {
+      target.classList.remove('hidden');
     }
   }
 
-  function updateLanTip(lanUrl) {
-    if (netTip) netTip.classList.add('hidden');
-  }
-
-  function showWelcomeView(username) {
-    if (welcomeUser) {
-      welcomeUser.textContent = 'MONITOR';
-    }
-    showView('welcome-view');
-  }
-
-  // ================= 6. KONFIGURATSIYA VA AVTORIZATSIYA TEKSHIRUVI =================
-  function checkLocalWifi(lanHost, timeoutMs = 1200) {
-    return new Promise((resolve) => {
-      let done = false;
-      const timer = setTimeout(() => {
-        if (!done) {
-          done = true;
-          resolve(false);
-        }
-      }, timeoutMs);
-
-      const finish = (val) => {
-        if (!done) {
-          done = true;
-          clearTimeout(timer);
-          resolve(val);
-        }
-      };
-
-      try {
-        fetch(`http://${lanHost}/health`, { mode: 'no-cors' })
-          .then(() => finish(true))
-          .catch(() => {});
-      } catch (_) {}
-
-      const img = new Image();
-      img.onload = () => finish(true);
-      img.onerror = () => finish(true);
-      img.src = `http://${lanHost}/favicon.svg?_t=${Date.now()}`;
-    });
-  }
-
-  async function initConfig() {
-    const params = new URLSearchParams(window.location.search);
-    const qHost = params.get('host') || params.get('h');
-    if (qHost) {
-      remoteHost = qHost.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      localStorage.setItem('remote_desk_host', remoteHost);
-    }
-
-    const qToken = params.get('token') || params.get('t');
-    if (qToken) {
-      authToken = qToken;
-      localStorage.setItem('desktop_auth_token', qToken);
-    }
-
-    if (params.get('relay') === '1' || params.get('cloud') === '1') {
-      localStorage.setItem('webrtc_force_relay', '1');
-    }
-    updateRelayUI();
-
-    let lanHost = '192.168.1.106:7777';
-    try {
-      const res = await fetch('/api/config');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.host) {
-          remoteHost = data.host.replace(/^https?:\/\//, '').replace(/\/$/, '');
-          localStorage.setItem('remote_desk_host', remoteHost);
-        }
-        if (data && data.lanHost) {
-          lanHost = data.lanHost;
-        }
-      }
-    } catch (e) {}
-
-    const savedToken = localStorage.getItem('desktop_auth_token');
-
-    // Agar token saqlangan bo'lsa: Blok va Auth ni bir vaqtda tekshiramiz
-    if (savedToken) {
-      try {
-        const [authRes, blockRes] = await Promise.all([
-          fetch(getApiUrl('/api/check-auth'), {
-            headers: {
-              'Authorization': `Bearer ${savedToken}`,
-              'ngrok-skip-browser-warning': 'true'
-            },
-            credentials: 'include'
-          }).catch(() => null),
-          fetch(getApiUrl('/api/check-block'), {
-            headers: { 'ngrok-skip-browser-warning': 'true' }
-          }).catch(() => null)
-        ]);
-
-        if (blockRes && blockRes.ok) {
-          const blockData = await blockRes.json().catch(() => null);
-          if (blockData && blockData.blocked && blockData.retryAfterSeconds) {
-            startBlockCountdown(blockData.retryAfterSeconds);
-            showView('login-view');
-            return;
-          }
-        }
-
-        if (authRes && authRes.ok) {
-          const authData = await authRes.json().catch(() => null);
-          if (authData && authData.authenticated) {
-            authToken = authData.token || savedToken;
-            currentUsername = authData.username || localStorage.getItem('desktop_username') || 'muhamad';
-            showWelcomeView(currentUsername);
-            return;
-          }
-        }
-      } catch (e) {}
-
-      localStorage.removeItem('desktop_auth_token');
-      authToken = null;
-    } else {
-      try {
-        const blockRes = await fetch(getApiUrl('/api/check-block'), {
-          headers: { 'ngrok-skip-browser-warning': 'true' }
-        }).catch(() => null);
-        if (blockRes && blockRes.ok) {
-          const blockData = await blockRes.json().catch(() => null);
-          if (blockData && blockData.blocked && blockData.retryAfterSeconds) {
-            startBlockCountdown(blockData.retryAfterSeconds);
-          }
-        }
-      } catch (e) {}
-    }
-
-    showView('login-view');
-  }
-
+  // ================= 5. TARMOQ VA HOST ANIQLASH (LOKAL vs ONLINE) =================
   function isLocalHostName(h) {
     return h === 'localhost' || h === '127.0.0.1' || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h) || h.endsWith('.local');
   }
 
+  function isCurrentHostLocal() {
+    return isLocalHostName(window.location.hostname);
+  }
+
   function getHost() {
-    const h = window.location.hostname;
-    if (isLocalHostName(h)) {
+    if (isCurrentHostLocal()) {
       return window.location.host;
     }
     return remoteHost || localStorage.getItem('remote_desk_host') || window.location.host;
   }
 
   function getApiUrl(path) {
-    const h = window.location.hostname;
-    if (isLocalHostName(h)) {
+    if (isCurrentHostLocal()) {
       return path;
     }
     return `${window.location.protocol}//${getHost()}${path}`;
   }
 
-  function getStreamUrl() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  function getPtyStreamUrl() {
+    const isLocal = isCurrentHostLocal();
+    const protocol = isLocal ? (window.location.protocol === 'https:' ? 'wss:' : 'ws:') : 'wss:';
+    const host = getHost();
     const token = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
-    return `${protocol}//${getHost()}/video-stream${token}`;
+    return `${protocol}//${host}/pty-stream${token}`;
   }
 
-  // ================= 6.1 ULTRA-TEZKOR SHELL STREAM (WEBRTC/WEBSOCKET) =================
-  let shellWs = null;
-  const shellPending = new Map();
-
-  function getShellStreamUrl() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const token = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
-    return `${protocol}//${getHost()}/shell-stream${token}`;
-  }
-
-  function initShellStreamSocket() {
-    if (!authToken) return;
-    if (shellWs && (shellWs.readyState === WebSocket.OPEN || shellWs.readyState === WebSocket.CONNECTING)) {
-      return;
-    }
-
-    try {
-      shellWs = new WebSocket(getShellStreamUrl());
-
-      shellWs.onopen = () => {
-        // Ultra-past kechikishli shell oqimi ulandi
-        try {
-          shellWs.send(JSON.stringify({ type: 'get_history' }));
-        } catch (_) {}
-      };
-
-      shellWs.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const { id, type } = data;
-
-          // Fish/Bash tarixi kelganda yuklash
-          if (type === 'history' && Array.isArray(data.history)) {
-            shellHistory = data.history;
-            cmdHistory.length = 0;
-            cmdHistory.push(...shellHistory);
-            cmdIndex = cmdHistory.length;
-            return;
-          }
-
-          if (!id || !shellPending.has(id)) return;
-
-          const req = shellPending.get(id);
-
-          if (type === 'chunk') {
-            if (req.onChunk) req.onChunk(data);
-          } else if (type === 'done') {
-            clearTimeout(req.timer);
-            shellPending.delete(id);
-            if (req.onDone) req.onDone(data);
-          }
-        } catch (e) {}
-      };
-
-      shellWs.onclose = () => {
-        shellWs = null;
-        if (authToken) {
-          setTimeout(initShellStreamSocket, 2000);
-        }
-      };
-
-      shellWs.onerror = () => {};
-    } catch (e) {
-      shellWs = null;
-    }
-  }
-
-  // ================= 6.2 FISH & BASH TARIXINI YUKLASH VA AUTOSUGGEST =================
-  async function fetchShellHistory() {
-    if (!authToken) return;
-    try {
-      const res = await fetch(getApiUrl('/api/shell-history'), {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'ngrok-skip-browser-warning': 'true'
-        },
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.history) && data.history.length > 0) {
-          shellHistory = data.history;
-          cmdHistory.length = 0;
-          cmdHistory.push(...shellHistory);
-          cmdIndex = cmdHistory.length;
-        }
-      }
-    } catch (_) {}
-  }
-
-  function updateSuggestion() {
-    if (!ghostHidden || !ghostSuggestion || !terminalInput) return;
-    const val = terminalInput.value;
-    if (!val || !val.trim()) {
-      clearSuggestion();
-      return;
-    }
-
-    // Fish kabi eng yangi tarixdan boshlab qidirish
-    let match = '';
-    for (let i = shellHistory.length - 1; i >= 0; i--) {
-      const item = shellHistory[i];
-      if (item && item.startsWith(val) && item !== val) {
-        match = item;
-        break;
-      }
-    }
-
-    if (match) {
-      currentSuggestion = match;
-      ghostHidden.textContent = val;
-      ghostSuggestion.textContent = match.slice(val.length);
+  function updateNetworkBadge() {
+    if (!ptyNetBadge) return;
+    const isLocal = isCurrentHostLocal();
+    if (isLocal) {
+      ptyNetBadge.className = 'pty-badge local';
+      ptyNetBadge.textContent = `⚡ Lokal (${window.location.hostname})`;
+      if (ptyLanSwitchBtn) ptyLanSwitchBtn.classList.add('hidden');
     } else {
-      clearSuggestion();
-    }
-  }
-
-  function clearSuggestion() {
-    currentSuggestion = '';
-    if (ghostHidden) ghostHidden.textContent = '';
-    if (ghostSuggestion) ghostSuggestion.textContent = '';
-  }
-
-  // ================= 8. FULLSCREEN TOGGLE =================
-  function toggleFullscreen(forceOpen = false) {
-    const doc = document;
-    const isFull = doc.fullscreenElement || doc.webkitFullscreenElement;
-
-    if (forceOpen || !isFull) {
-      if (doc.documentElement.requestFullscreen) {
-        doc.documentElement.requestFullscreen().catch(() => {});
-      } else if (doc.documentElement.webkitRequestFullscreen) {
-        doc.documentElement.webkitRequestFullscreen();
-      } else if (videoEl && videoEl.webkitEnterFullscreen) {
-        videoEl.webkitEnterFullscreen();
-      }
-    } else {
-      if (doc.exitFullscreen) {
-        doc.exitFullscreen().catch(() => {});
-      } else if (doc.webkitExitFullscreen) {
-        doc.webkitExitFullscreen().catch(() => {});
+      ptyNetBadge.className = 'pty-badge online';
+      ptyNetBadge.textContent = '🌐 Online (Bulut)';
+      if (ptyLanSwitchBtn) {
+        ptyLanSwitchBtn.href = `http://${lanHost}/?token=${encodeURIComponent(authToken || '')}`;
+        ptyLanSwitchBtn.classList.remove('hidden');
       }
     }
   }
 
-  if (videoEl) {
-    videoEl.addEventListener('dblclick', (e) => {
-      e.preventDefault();
-      toggleFullscreen();
-    });
-
-    let lastTapTime = 0;
-    videoEl.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      const diff = now - lastTapTime;
-      if (diff < 350 && diff > 0) {
-        e.preventDefault();
-        toggleFullscreen();
-      }
-      lastTapTime = now;
-    });
-  }
-
-  // ================= 9. LOGOUT (TIZIMDAN CHIQISH) =================
-  async function logoutSession(reason = '') {
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-
-    if (authToken) {
-      try {
-        await fetch(getApiUrl('/api/logout'), {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'ngrok-skip-browser-warning': 'true'
-          },
-          credentials: 'include'
-        });
-      } catch (e) {}
-    }
-
-    authToken = null;
-    localStorage.removeItem('desktop_auth_token');
-    localStorage.removeItem('desktop_username');
-    stopStream();
-    if (ptyWs) {
-      try { ptyWs.close(); } catch (_) {}
-      ptyWs = null;
-    }
-
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    }
-
-    showView('login-view');
-
-    if (reason && loginError) {
-      loginError.textContent = reason;
-      loginError.classList.remove('hidden');
-    }
-  }
-
-  // ================= 10. WEBRTC STREAM & AUDIO & CONTROLS =================
-  function updateAudioUI(isMuted) {
-    if (!barAudioBtn) return;
-    if (isMuted) {
-      if (barIconAudioOn) barIconAudioOn.classList.add('hidden');
-      if (barIconAudioOff) barIconAudioOff.classList.remove('hidden');
-      barAudioBtn.classList.remove('active');
-    } else {
-      if (barIconAudioOff) barIconAudioOff.classList.add('hidden');
-      if (barIconAudioOn) barIconAudioOn.classList.remove('hidden');
-      barAudioBtn.classList.add('active');
-    }
-  }
-
-  function toggleAudio() {
-    if (!videoEl) return;
-    const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-    if (!innerVideo) return;
-
-    // Xost kompyuterning o'zida ovozni yoqish akustik rezonans (larsen echo screech) chiqarishini oldini olamiz
-    const isHostMachine = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (innerVideo.muted && isHostMachine) {
-      showToast("⚠️ Siz xost kompyuterning o‘zidasiz. Akustik aks-sado (g‘uvillash) oldini olish uchun ovoz faqat boshqa qurilmalarda yoqiladi.", true);
-      return;
-    }
-
-    innerVideo.muted = !innerVideo.muted;
-    if (!innerVideo.muted) {
-      innerVideo.play().catch(() => {});
-    }
-    updateAudioUI(innerVideo.muted);
-  }
-
-  function togglePause() {
-    if (!videoEl) return;
-    const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-    if (!innerVideo) return;
-
-    if (innerVideo.paused) {
-      innerVideo.play().catch(() => {});
-      if (barIconPause) barIconPause.classList.remove('hidden');
-      if (barIconPlay) barIconPlay.classList.add('hidden');
-      if (barPauseBtn) barPauseBtn.classList.remove('active');
-    } else {
-      innerVideo.pause();
-      if (barIconPause) barIconPause.classList.add('hidden');
-      if (barIconPlay) barIconPlay.classList.remove('hidden');
-      if (barPauseBtn) barPauseBtn.classList.add('active');
-    }
-  }
-
+  // ================= 6. XABARNOMALAR (TOAST) =================
   function showToast(message, isError = false) {
     let toast = document.getElementById('app-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'app-toast';
       toast.style.position = 'fixed';
-      toast.style.bottom = '80px';
+      toast.style.bottom = '20px';
       toast.style.left = '50%';
       toast.style.transform = 'translateX(-50%)';
-      toast.style.backgroundColor = 'rgba(20, 20, 20, 0.94)';
+      toast.style.background = '#1a1a1a';
       toast.style.color = '#fff';
-      toast.style.padding = '10px 20px';
-      toast.style.borderRadius = '10px';
-      toast.style.fontSize = '14px';
-      toast.style.fontWeight = '500';
-      toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
-      toast.style.border = '1px solid rgba(255,255,255,0.15)';
-      toast.style.zIndex = '99999';
-      toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-      toast.style.pointerEvents = 'none';
-      toast.style.textAlign = 'center';
-      toast.style.maxWidth = '90vw';
+      toast.style.padding = '8px 16px';
+      toast.style.borderRadius = '6px';
+      toast.style.border = '1px solid #333';
+      toast.style.fontFamily = 'monospace';
+      toast.style.fontSize = '12px';
+      toast.style.zIndex = '9999';
+      toast.style.transition = 'opacity 0.2s';
       document.body.appendChild(toast);
     }
     toast.textContent = message;
-    toast.style.borderColor = isError ? 'rgba(239, 68, 68, 0.7)' : 'rgba(34, 197, 94, 0.7)';
+    toast.style.borderColor = isError ? '#ff5555' : 'var(--accent-green, #00ff66)';
     toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
     clearTimeout(toast._tid);
     toast._tid = setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(10px)';
-    }, 4000);
+    }, 3000);
   }
 
-  async function togglePictureInPicture() {
-    if (!videoEl) return;
-    const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-    if (!innerVideo) return;
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (document.pictureInPictureEnabled) {
-        await innerVideo.requestPictureInPicture();
-      }
-    } catch (err) {
-      console.warn('PiP xatosi:', err.message);
-    }
-  }
-
-  // ================= 10.1 CHROYLI VISUAL SPLASH SCREEN =================
-  let splashWatchTimer = null;
-
-  function showSplash() {
-    if (!screenSplash) return;
-    screenSplash.classList.remove('fade-out');
-    if (splashStatusBadge) splashStatusBadge.textContent = 'ULANMOQDA';
-    if (splashDesc) splashDesc.textContent = 'Kompyuter bilan xavfsiz apparat oqimi o‘rnatilmoqda...';
-    if (stepHandshake) stepHandshake.className = 'splash-step active';
-    if (stepMedia) stepMedia.className = 'splash-step';
-    if (stepLive) stepLive.className = 'splash-step';
-
-    if (splashWatchTimer) clearInterval(splashWatchTimer);
-
-    // Kadr kelgunicha (infinity) tekshirib turamiz
-    splashWatchTimer = setInterval(() => {
-      const innerVideo = videoEl ? (videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null)) : null;
-      if (innerVideo && (innerVideo.currentTime > 0.05 || (innerVideo.readyState >= 2 && innerVideo.videoWidth > 0))) {
-        onVideoFrameArrived();
-      }
-    }, 100);
-  }
-
-  function hideSplash() {
-    if (splashWatchTimer) {
-      clearInterval(splashWatchTimer);
-      splashWatchTimer = null;
-    }
-    if (!screenSplash) return;
-    screenSplash.classList.add('fade-out');
-  }
-
-  function updateSplashStep(step, text) {
-    if (splashDesc && text) splashDesc.textContent = text;
-    if (step === 2) {
-      if (stepHandshake) stepHandshake.className = 'splash-step done';
-      if (stepMedia) stepMedia.className = 'splash-step active';
-      if (splashStatusBadge) splashStatusBadge.textContent = 'MEDIA QABUL QILINMOQDA';
-    } else if (step === 3) {
-      if (stepHandshake) stepHandshake.className = 'splash-step done';
-      if (stepMedia) stepMedia.className = 'splash-step done';
-      if (stepLive) stepLive.className = 'splash-step active';
-      if (splashStatusBadge) splashStatusBadge.textContent = 'JONLI EFIR TAYYOR';
-    }
-  }
-
-  function onVideoFrameArrived() {
-    updateSplashStep(3, 'Tasvir va audio qabul qilindi. Jonli efir boshlandi!');
-    setTimeout(() => {
-      hideSplash();
-    }, 280);
-  }
-
-  function reconnectStream() {
-    stopStream();
-    showSplash();
-    setTimeout(() => {
-      startStream();
-      showBottombar();
-    }, 150);
-  }
-
-  function startStream() {
-    if (prewarmStarted || !videoEl) return;
-    prewarmStarted = true;
-
-    try {
-      const streamUrl = getStreamUrl();
-      videoEl.mode = 'webrtc';
-      videoEl.media = 'video';
-      videoEl.src = streamUrl;
-
-      const triggerPlay = () => {
-        try {
-          const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-          if (innerVideo) {
-            innerVideo.playsInline = true;
-            // Xavfsizlik: Akustik rezonans (larsen screech loop) oldini olish uchun stream sukut bo'yicha MUTED bo'lib boshlanadi
-            innerVideo.muted = true;
-            innerVideo.play().catch(() => {});
-            updateAudioUI(true);
-          }
-        } catch (e) {}
-      };
-
-      triggerPlay();
-
-      const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-      if (innerVideo) {
-        const onFrame = () => {
-          if (innerVideo.currentTime > 0.05 || (innerVideo.readyState >= 2 && innerVideo.videoWidth > 0)) {
-            onVideoFrameArrived();
-            innerVideo.removeEventListener('timeupdate', onFrame);
-            innerVideo.removeEventListener('playing', onFrame);
-          }
-        };
-        innerVideo.addEventListener('timeupdate', onFrame);
-        innerVideo.addEventListener('playing', onFrame);
-      }
-    } catch (err) {
-      console.warn('Video ulanish xatosi:', err.message);
-    }
-  }
-
-  // ================= 10.2 EKRAN UYQUGA KETMASLIGI (WAKE LOCK) VA 20-40 SOAT WATCHDOG =================
-  let wakeLockSentinel = null;
-  let streamWatchdogTimer = null;
-  let lastVideoTime = -1;
-  let lastProgressTs = 0;
-
-  async function acquireScreenWakeLock() {
-    try {
-      if ('wakeLock' in navigator && !wakeLockSentinel) {
-        wakeLockSentinel = await navigator.wakeLock.request('screen');
-        wakeLockSentinel.addEventListener('release', () => {
-          wakeLockSentinel = null;
-          console.log('[WakeLock] Ekran qulfi bo‘shatildi');
-        });
-        console.log('[WakeLock] Ekran doimiy yoniq (20-40 soat uzluksiz rejim)');
-      }
-    } catch (err) {
-      console.warn('[WakeLock] Faollashtirilmadi:', err.message);
-    }
-  }
-
-  function releaseScreenWakeLock() {
-    if (wakeLockSentinel) {
-      try {
-        wakeLockSentinel.release().catch(() => {});
-      } catch (e) {}
-      wakeLockSentinel = null;
-    }
-  }
-
-  function startStreamWatchdog() {
-    stopStreamWatchdog();
-
-    streamWatchdogTimer = setInterval(() => {
-      if (currentView !== 'screen-view') return;
-      const innerVideo = videoEl ? (videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null)) : null;
-      if (!innerVideo) return;
-
-      // 1. Agar brauzer tasvirni to'xtatib qo'ysa, qayta o'ynatamiz
-      if (innerVideo.paused && innerVideo.readyState >= 2) {
-        innerVideo.play().catch(() => {});
-      }
-
-      // 2. Agar WebSocket yoki WebRTC uzilib qolgan bo'lsa, avtomatik qayta tiklaymiz
-      if (videoEl.wsState === WebSocket.CLOSED && videoEl.pcState === WebSocket.CLOSED) {
-        if (typeof videoEl.onconnect === 'function') {
-          videoEl.onconnect();
-        }
-      }
-    }, 2000);
-  }
-
-  function stopStreamWatchdog() {
-    if (streamWatchdogTimer) {
-      clearInterval(streamWatchdogTimer);
-      streamWatchdogTimer = null;
-    }
-  }
-
-  // Brauzer foni, telefon qulfi ochilganda yoki tabga qaytilganda
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && currentView === 'screen-view') {
-      acquireScreenWakeLock();
-      const innerVideo = videoEl ? (videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null)) : null;
-      if (innerVideo && innerVideo.paused) {
-        innerVideo.play().catch(() => {});
-      }
-      if (videoEl && (videoEl.pcState !== WebSocket.OPEN || !innerVideo || innerVideo.readyState < 2)) {
-        if (typeof videoEl.onconnect === 'function') {
-          videoEl.onconnect();
-        }
-      }
-    }
-  });
-
-  function stopStream() {
-    hideSplash();
-    stopStreamWatchdog();
-    releaseScreenWakeLock();
-    prewarmStarted = false;
-    isMicActive = false;
-    updateMicUI(false);
-
-    if (videoEl) {
-      try {
-        if (typeof videoEl.ondisconnect === 'function') {
-          videoEl.ondisconnect();
-        }
-      } catch (e) {}
-    }
-  }
-
-  // ================= 11. SCREEN REJIMIGA KIRISH (DARHOL, KUTISKSIZ) =================
-  function enterScreenView() {
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-    showSplash();
-    showView('screen-view');
-    startStream();
-    acquireScreenWakeLock();
-    startStreamWatchdog();
-
-    try {
-      const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-      if (innerVideo) {
-        innerVideo.muted = true;
-        innerVideo.play().catch(() => {});
-        updateAudioUI(true);
-      }
-    } catch (e) {}
-    toggleFullscreen(true);
-  }
-
-  function startCountdown() {
-    enterScreenView();
-  }
-
-  // ================= 12. SHELL TERMINAL BOSHQARUVI =================
-  function updateCwdUI() {
-    if (!shellCwdText) return;
-    const home = '/home/muhamad';
-    let display = currentCwd;
-    if (display === home) {
-      display = '~';
-    } else if (display.startsWith(home + '/')) {
-      display = '~' + display.slice(home.length);
-    }
-    shellCwdText.textContent = display;
-  }
-
-  function escapeHtml(text) {
-    if (!text) return '';
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function ansiToHtml(str) {
-    if (!str) return '';
-    const ansiMap = {
-      '30': 'color: #4e4e4e',
-      '31': 'color: #ff5555',
-      '32': 'color: #50fa7b',
-      '33': 'color: #f1fa8c',
-      '34': 'color: #bd93f9',
-      '35': 'color: #ff79c6',
-      '36': 'color: #8be9fd',
-      '37': 'color: #f8f8f2',
-      '90': 'color: #797979',
-      '91': 'color: #ff6e6e',
-      '92': 'color: #69ff94',
-      '93': 'color: #ffffa5',
-      '94': 'color: #d6acff',
-      '95': 'color: #ff92df',
-      '96': 'color: #a4ffff',
-      '97': 'color: #ffffff',
-      '1': 'font-weight: bold',
-      '2': 'opacity: 0.7',
-      '4': 'text-decoration: underline'
-    };
-
-    let escaped = escapeHtml(str);
-    return escaped.replace(/\x1b\[([0-9;]+)m/g, (match, codes) => {
-      if (codes === '0' || codes === '00') return '</span>';
-      const parts = codes.split(';');
-      const styles = [];
-      for (const p of parts) {
-        if (ansiMap[p]) styles.push(ansiMap[p]);
-      }
-      return styles.length ? `<span style="${styles.join('; ')}">` : '';
-    });
-  }
-
-  function scrollTerminalToBottom() {
-    if (terminalScreen) {
-      terminalScreen.scrollTop = terminalScreen.scrollHeight;
-    }
-  }
-
-  function appendTerminalMessage(title, text, isError = false) {
-    if (!terminalHistory) return;
-    const entry = document.createElement('div');
-    entry.className = 'term-entry';
-
-    let html = `
-      <div class="term-cmd-line">
-        <span class="prompt-tag">[I]</span>
-        <span class="prompt-arrow">&gt;</span>
-        <span class="term-cmd-text" style="color: #888888;">${escapeHtml(title)}</span>
-      </div>
-    `;
-
-    if (text) {
-      const errorClass = isError ? ' error' : '';
-      html += `<pre class="term-output${errorClass}">${ansiToHtml(text)}</pre>`;
-    }
-
-    entry.innerHTML = html;
-    terminalHistory.appendChild(entry);
-    scrollTerminalToBottom();
-  }
-
-  function executeTerminalCommand(rawCmd) {
-    const cmd = rawCmd.trim();
-    if (!cmd) return Promise.resolve();
-
-    cmdHistory.push(cmd);
-    cmdIndex = cmdHistory.length;
-    if (!shellHistory.includes(cmd)) {
-      shellHistory.push(cmd);
-    }
-
-    if (cmd === 'clear') {
-      if (terminalHistory) terminalHistory.innerHTML = '';
-      return Promise.resolve();
-    }
-
-    if (cmd === 'exit') {
-      showView('welcome-view');
-      return Promise.resolve();
-    }
-
-    // Tarixga kiritish va bajarilayotganini ko'rsatish
-    const entry = document.createElement('div');
-    entry.className = 'term-entry';
-    entry.innerHTML = `
-      <div class="term-cmd-line">
-        <span class="prompt-tag">[I]</span>
-        <span class="prompt-arrow">&gt;</span>
-        <span class="term-cmd-text">${escapeHtml(cmd)}</span>
-      </div>
-      <pre class="term-output" style="color: #666666;"></pre>
-    `;
-    terminalHistory.appendChild(entry);
-    scrollTerminalToBottom();
-
-    const outputEl = entry.querySelector('.term-output');
-
-    // 1. Ultra-tezkor WebSocket rejimida jo'natish (WebRTC kabi ko'z yumib ochguncha)
-    if (shellWs && shellWs.readyState === WebSocket.OPEN) {
-      return new Promise((resolve) => {
-        const cmdId = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-        runningCmdId = cmdId;
-        isCommandRunning = true;
-        if (terminalActiveLine) terminalActiveLine.classList.add('running');
-
-        let accumulatedText = '';
-        let hasReceived = false;
-
-        const timer = setTimeout(() => {
-          if (shellPending.has(cmdId)) {
-            shellPending.delete(cmdId);
-            isCommandRunning = false;
-            runningCmdId = null;
-            if (terminalActiveLine) terminalActiveLine.classList.remove('running');
-            if (!hasReceived) {
-              outputEl.className = 'term-output error';
-              outputEl.textContent = 'Buyruq kutish vaqti tugadi (timeout: 60s).';
-            }
-            resolve();
-          }
-        }, 60000);
-
-        shellPending.set(cmdId, {
-          timer,
-          onChunk: (chunk) => {
-            hasReceived = true;
-            if (chunk.stdout) accumulatedText += chunk.stdout;
-            if (chunk.stderr) accumulatedText += chunk.stderr;
-            outputEl.innerHTML = ansiToHtml(accumulatedText);
-            scrollTerminalToBottom();
-          },
-          onDone: (data) => {
-            isCommandRunning = false;
-            runningCmdId = null;
-            if (terminalActiveLine) terminalActiveLine.classList.remove('running');
-            hasReceived = true;
-            if (data.cwd) {
-              currentCwd = data.cwd;
-              updateCwdUI();
-            }
-            if (data.stdout && !accumulatedText.includes(data.stdout)) accumulatedText += data.stdout;
-            if (data.stderr && !accumulatedText.includes(data.stderr)) accumulatedText += data.stderr;
-
-            if (!accumulatedText.trim()) {
-              outputEl.remove();
-            } else {
-              const isError = data.exitCode !== 0;
-              outputEl.className = isError ? 'term-output error' : 'term-output';
-              outputEl.innerHTML = ansiToHtml(accumulatedText);
-            }
-            scrollTerminalToBottom();
-            resolve();
-          }
-        });
-
-        shellWs.send(JSON.stringify({ id: cmdId, command: cmd, cwd: currentCwd }));
-      });
-    }
-
-    // 2. Agar WebSocket ulanmagan bo'lsa uni tiklashga urinib, HTTP fallback orqali jo'natish
-    initShellStreamSocket();
-    outputEl.textContent = '...';
-
-    return (async () => {
-      try {
-        const res = await fetch(getApiUrl('/api/shell'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'ngrok-skip-browser-warning': 'true'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ command: cmd, cwd: currentCwd })
-        });
-
-        if (res.status === 401) {
-          outputEl.className = 'term-output error';
-          outputEl.textContent = 'Sessiya tugadi. Qayta tizimga kiring.';
-          setTimeout(() => logoutSession(), 1500);
-          return;
-        }
-
-        const data = await res.json();
-        if (data.cwd) {
-          currentCwd = data.cwd;
-          updateCwdUI();
-        }
-
-        const hasStdout = Boolean(data.stdout && data.stdout.trim());
-        const hasStderr = Boolean(data.stderr && data.stderr.trim());
-
-        if (!hasStdout && !hasStderr) {
-          outputEl.remove();
-        } else {
-          const isError = data.exitCode !== 0;
-          outputEl.className = isError ? 'term-output error' : 'term-output';
-          let fullText = '';
-          if (data.stdout) fullText += data.stdout;
-          if (data.stderr) fullText += (fullText ? '\n' : '') + data.stderr;
-          outputEl.innerHTML = ansiToHtml(fullText);
-        }
-      } catch (err) {
-        outputEl.className = 'term-output error';
-        outputEl.textContent = `Xatolik: ${err.message}`;
-      }
-
-      scrollTerminalToBottom();
-    })();
-  }
-
-  if (terminalInput) {
-    terminalInput.addEventListener('input', () => {
-      updateSuggestion();
-    });
-
-    terminalInput.addEventListener('keydown', async (e) => {
-      // Tab yoki ArrowRight (qator oxirida) bosilganda autosuggestion ni qabul qilish
-      if (e.key === 'Tab') {
-        if (currentSuggestion) {
-          e.preventDefault();
-          terminalInput.value = currentSuggestion;
-          clearSuggestion();
-          return;
-        }
-      }
-
-      if (e.key === 'ArrowRight') {
-        if (currentSuggestion && terminalInput.selectionStart === terminalInput.value.length) {
-          e.preventDefault();
-          terminalInput.value = currentSuggestion;
-          clearSuggestion();
-          return;
-        }
-      }
-
-      if (e.key === 'Escape') {
-        clearSuggestion();
-        return;
-      }
-
-      if (e.key === 'Enter') {
-        clearSuggestion();
-        e.preventDefault();
-
-        // 1. Agar jarayon davom etayotgan bo'lsa (masalan: su ron parol kutayotgan bo'lsa)
-        if (isCommandRunning && runningCmdId) {
-          const stdinText = terminalInput.value;
-          terminalInput.value = '';
-          if (shellWs && shellWs.readyState === WebSocket.OPEN) {
-            shellWs.send(JSON.stringify({ id: runningCmdId, type: 'stdin', text: stdinText + '\r' }));
-          }
-          return;
-        }
-
-        // 2. Yangi buyruq kiritish
-        const cmd = terminalInput.value;
-        if (!cmd.trim()) return;
-
-        terminalInput.value = '';
-        if (terminalActiveLine) terminalActiveLine.classList.add('running');
-
-        try {
-          await executeTerminalCommand(cmd);
-        } finally {
-          isCommandRunning = false;
-          runningCmdId = null;
-          if (terminalActiveLine) {
-            terminalActiveLine.classList.remove('running');
-            terminalActiveLine.classList.remove('hidden');
-          }
-          terminalInput.focus();
-          scrollTerminalToBottom();
-        }
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        clearSuggestion();
-        if (cmdHistory.length > 0 && cmdIndex > 0) {
-          cmdIndex--;
-          terminalInput.value = cmdHistory[cmdIndex];
-        }
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        clearSuggestion();
-        if (cmdIndex < cmdHistory.length - 1) {
-          cmdIndex++;
-          terminalInput.value = cmdHistory[cmdIndex];
-        } else {
-          cmdIndex = cmdHistory.length;
-          terminalInput.value = '';
-        }
-      } else if (e.ctrlKey && (e.key === 'l' || e.key === 'L')) {
-        e.preventDefault();
-        clearSuggestion();
-        if (terminalHistory) terminalHistory.innerHTML = '';
-      }
-    });
-  }
-
-  if (terminalScreen) {
-    terminalScreen.addEventListener('click', () => {
-      if (window.getSelection().toString().length === 0) {
-        if (terminalInput) terminalInput.focus();
-      }
-    });
-  }
-
-  // Global Ctrl+C (SIGINT / Bekor qilish)
-  window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
-      if (window.getSelection().toString().length > 0) {
-        return;
-      }
-
-      if (isCommandRunning && runningCmdId) {
-        e.preventDefault();
-        try {
-          if (shellWs && shellWs.readyState === WebSocket.OPEN) {
-            shellWs.send(JSON.stringify({ id: runningCmdId, type: 'interrupt' }));
-          }
-        } catch (_) {}
-
-        // Tarixga ^C qo'shish
-        const entries = document.querySelectorAll('.terminal-history .term-entry');
-        if (entries.length > 0) {
-          const lastEntry = entries[entries.length - 1];
-          const outEl = lastEntry.querySelector('.term-output');
-          if (outEl) {
-            outEl.innerHTML += '^C\n';
-          }
-        }
-
-        isCommandRunning = false;
-        runningCmdId = null;
-        if (terminalActiveLine) {
-          terminalActiveLine.classList.remove('running');
-          terminalActiveLine.classList.remove('hidden');
-        }
-        if (terminalInput) {
-          terminalInput.value = '';
-          terminalInput.focus();
-        }
-        scrollTerminalToBottom();
-        return;
-      }
-
-      if (document.activeElement === terminalInput && terminalInput.value) {
-        e.preventDefault();
-        terminalInput.value = '';
-        clearSuggestion();
-      }
-    }
-  });
-
-  // ================= 13. NAVIGATSIYA TUGMALARI =================
-  // Menyu -> Ekran
-  if (modeScreenBtn) {
-    modeScreenBtn.addEventListener('click', () => {
-      enterScreenView();
-    });
-  }
-
-  // Menyu -> Shell
-  if (modeShellBtn) {
-    modeShellBtn.addEventListener('click', () => {
-      showView('shell-view');
-    });
-  }
-
-  // Menyu -> Chiqish
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      logoutSession();
-    });
-  }
-
-  // Splash Bekor qilish tugmasi
-  if (splashCancelBtn) {
-    splashCancelBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      stopStream();
-      showView('welcome-view');
-    });
-  }
-
-  // WebRTC bosqichlarini splashda aks ettirish
-  if (videoEl) {
-    videoEl.addEventListener('webrtc-handshake', () => {
-      updateSplashStep(2, 'Apparat H.264 video va miks audio kodi ochilmoqda...');
-    });
-    videoEl.addEventListener('webrtc-track', () => {
-      updateSplashStep(2, 'Ovoz va tasvir treklari qabul qilindi...');
-    });
-    videoEl.addEventListener('webrtc-connected', () => {
-      updateSplashStep(3, 'Apparat video oqimi ulandi, kadrlar uzatilmoqda...');
-    });
-    videoEl.addEventListener('webrtc-stats', (e) => {
-      const { isLocal, rtt } = e.detail || {};
-      if (menuStreamInfo) {
-        menuStreamInfo.textContent = `20 FPS • H.264 Baseline • ${isLocal ? 'Lokal Wi-Fi' : 'Bulut Relay'} (${rtt})`;
-      }
-      if (menuRelayText) {
-        menuRelayText.textContent = isLocal ? 'Tarmoq: Lokal Wi-Fi (Tez)' : 'Tarmoq: Bulut Relay (Faol)';
-      }
-    });
-  }
-
-  // Ekranga tekkanda / harakatlanganda bottombarni ko'rsatish
-  if (screenView) {
-    screenView.addEventListener('click', (e) => {
-      if (e.target.closest('#screen-bottombar')) return;
-      toggleBottombar();
-    });
-
-    screenView.addEventListener('mousemove', () => {
-      showBottombar();
-    });
-
-    screenView.addEventListener('touchstart', (e) => {
-      if (e.target.closest('#screen-bottombar')) return;
-      showBottombar();
-    }, { passive: true });
-  }
-
-  // Bottombar -> Bosh menyu (Dashboard)
-  if (barDashboardBtn) {
-    barDashboardBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showView('welcome-view');
-    });
-  }
-
-  // Bottombar -> Pauza / Play
-  if (barPauseBtn) {
-    barPauseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      togglePause();
-      showBottombar();
-    });
-  }
-
-  // Bottombar -> Original PTY Terminal
-  if (barShellBtn) {
-    barShellBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showView('pty-view');
-      initPtyTerminal();
-    });
-  }
-
-  // Bottombar -> To'liq ekran
-  if (barFullscreenBtn) {
-    barFullscreenBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleFullscreen();
-      showBottombar();
-    });
-  }
-
-  // Bottombar -> 3-Nuqta (More menyu)
-  if (barMoreBtn) {
-    barMoreBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (barMoreMenu) {
-        barMoreMenu.classList.toggle('hidden');
-        if (!barMoreMenu.classList.contains('hidden')) {
-          if (bottombarTimer) clearTimeout(bottombarTimer);
-        } else {
-          showBottombar();
-        }
-      }
-    });
-  }
-
-  // Menyu tashqarisiga bosilganda uni yopish
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.bar-more-wrapper')) {
-      if (barMoreMenu) barMoreMenu.classList.add('hidden');
-    }
-  });
-
-  // More menu -> Picture-in-Picture
-  if (menuPipBtn) {
-    menuPipBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (barMoreMenu) barMoreMenu.classList.add('hidden');
-      togglePictureInPicture();
-    });
-  }
-
-  function updateRelayUI() {
-    const isRelay = localStorage.getItem('webrtc_force_relay') === '1';
-    if (menuRelayText) {
-      menuRelayText.textContent = isRelay ? 'Tarmoq: Bulut Relay (Faol)' : 'Tarmoq: Lokal Wi-Fi (Tez)';
-    }
-  }
-
-  // More menu -> Qayta ulanish (Reconnect)
-  if (menuReconnectBtn) {
-    menuReconnectBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (barMoreMenu) barMoreMenu.classList.add('hidden');
-      reconnectStream();
-    });
-  }
-
-  // More menu -> Tarmoq rejimini almashtirish (Lokal Wi-Fi / Bulut Relay)
-  if (menuRelayBtn) {
-    menuRelayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (barMoreMenu) barMoreMenu.classList.add('hidden');
-      const isRelay = localStorage.getItem('webrtc_force_relay') === '1';
-      if (isRelay) {
-        localStorage.removeItem('webrtc_force_relay');
-        showToast('⚡ Lokal Wi-Fi rejimiga o‘tildi (Minimal kechikish)');
-      } else {
-        localStorage.setItem('webrtc_force_relay', '1');
-        showToast('🌐 Bulut Relay rejimiga o‘tildi (Router blokirovkasidan xoli)');
-      }
-      updateRelayUI();
-      reconnectStream();
-    });
-  }
-
-  // More menu -> Tizimdan chiqish
-  if (menuLogoutBtn) {
-    menuLogoutBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      logoutSession();
-    });
-  }
-
-  // Shell sarlavhasi -> Ekran
-  if (shellToScreenBtn) {
-    shellToScreenBtn.addEventListener('click', () => {
-      showView('screen-view');
-      startStream();
-      toggleFullscreen(true);
-    });
-  }
-
-  // Shell sarlavhasi -> Menyu
-  if (shellToMenuBtn) {
-    shellToMenuBtn.addEventListener('click', () => {
-      showView('welcome-view');
-    });
-  }
-
-  // Shell sarlavhasi -> Chiqish
-  if (shellLogoutBtn) {
-    shellLogoutBtn.addEventListener('click', () => {
-      logoutSession();
-    });
-  }
-
-  // ================= 14. BLOK TAYMERI =================
-  function startBlockCountdown(totalSeconds) {
-    if (blockCountdownTimer) clearInterval(blockCountdownTimer);
-    let remain = Math.max(1, Math.round(totalSeconds));
-
-    function updateBlockText() {
-      const mins = Math.floor(remain / 60);
-      const secs = remain % 60;
-      let timeText = '';
-      if (mins > 0) timeText += `${mins} daqiqa `;
-      timeText += `${secs} soniya`;
-      if (loginError) {
-        loginError.textContent = `Xavfsizlik bloki: Juda ko'p xato urinishlar. Ushbu IP ${timeText}ga bloklangan.`;
-        loginError.classList.remove('hidden');
-      }
-    }
-
-    updateBlockText();
-    blockCountdownTimer = setInterval(() => {
-      remain -= 1;
-      if (remain <= 0) {
-        clearInterval(blockCountdownTimer);
-        blockCountdownTimer = null;
-        if (loginError) loginError.classList.add('hidden');
-      } else {
-        updateBlockText();
-      }
-    }, 1000);
-  }
-
-  // ================= 15. LOGIN FORMA =================
-  if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (loginError) loginError.classList.add('hidden');
-
-      const username = usernameInput ? usernameInput.value.trim() : '';
-      const password = passwordInput ? passwordInput.value : '';
-
-      if (!username || !password) return;
-
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Tekshirilmoqda...';
-      }
-
-      try {
-        const res = await fetch(getApiUrl('/api/login'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          if (blockCountdownTimer) {
-            clearInterval(blockCountdownTimer);
-            blockCountdownTimer = null;
-          }
-          authToken = data.token;
-          currentUsername = data.username || username;
-          localStorage.setItem('desktop_auth_token', authToken);
-          localStorage.setItem('desktop_username', currentUsername);
-
-          if (passwordInput) passwordInput.value = '';
-          showWelcomeView(currentUsername);
-        } else {
-          if (data.retryAfterSeconds) {
-            startBlockCountdown(data.retryAfterSeconds);
-          } else {
-            if (blockCountdownTimer) {
-              clearInterval(blockCountdownTimer);
-              blockCountdownTimer = null;
-            }
-            if (loginError) {
-              loginError.textContent = data.message || 'Login yoki parol noto‘g‘ri!';
-              loginError.classList.remove('hidden');
-            }
-          }
-        }
-      } catch (err) {
-        if (loginError) {
-          loginError.textContent = 'Server bilan bog‘lanishda xatolik yuz berdi';
-          loginError.classList.remove('hidden');
-        }
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Kirish';
-        }
-      }
-    });
-  }
-
-  // ================= 15.1 ORIGINAL PTY INTERAKTIV TERMINAL (1:1) =================
-  let ptyTerm = null;
-  let ptyFitAddon = null;
-  let ptyWs = null;
-
-  function getPtyStreamUrl() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const token = authToken ? `?token=${encodeURIComponent(authToken)}` : '';
-    return `${protocol}//${getHost()}/pty-stream${token}`;
-  }
-
+  // ================= 7. PTY XTERM TERMINALNI ISHGA TUSHIRISH =================
   function syncPtyViewport() {
     if (!ptyView || ptyView.classList.contains('hidden')) return;
 
     if (window.visualViewport) {
       const vv = window.visualViewport;
-      // Virtual klaviatura ochilganda (ekran 60px dan ortiq qisqarsa)
       const isKeyboardOpen = (window.innerHeight - vv.height) > 60;
 
       ptyView.style.height = `${vv.height}px`;
@@ -1606,14 +166,15 @@
   }
 
   function initPtyTerminal() {
+    showView('pty-view');
+    updateNetworkBadge();
+
     if (!ptyTerminalContainer) return;
 
-    if (ptyTerminalContainer && !ptyTerminalContainer._tapBound) {
+    if (!ptyTerminalContainer._tapBound) {
       ptyTerminalContainer._tapBound = true;
       ptyTerminalContainer.addEventListener('pointerdown', () => {
-        if (ptyTerm) {
-          ptyTerm.focus();
-        }
+        if (ptyTerm) ptyTerm.focus();
       });
     }
 
@@ -1629,10 +190,10 @@
         fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
         fontSize: window.innerWidth < 768 ? 12 : 14,
         letterSpacing: 0,
-        lineHeight: 1.15,
+        lineHeight: 1.18,
         theme: {
           background: '#000000',
-          foreground: '#e6e6e6',
+          foreground: '#f0f0f0',
           cursor: '#00ff66',
           cursorAccent: '#000000',
           selectionBackground: 'rgba(0, 255, 102, 0.3)',
@@ -1651,7 +212,7 @@
           brightBlue: '#caa9fa',
           brightMagenta: '#ff92d0',
           brightCyan: '#9aedfe',
-          brightWhite: '#e6e6e6'
+          brightWhite: '#ffffff'
         },
         convertEol: true,
         scrollback: 10000
@@ -1698,26 +259,41 @@
     }, 150);
   }
 
+  function setPtyStatus(text, statusClass) {
+    if (!ptyStatusBadge) return;
+    ptyStatusBadge.className = `pty-badge ${statusClass}`;
+    ptyStatusBadge.textContent = text;
+  }
+
   function connectPtyWs() {
-    if (ptyWs) {
-      try { ptyWs.close(); } catch (_) {}
-      ptyWs = null;
+    if (isConnecting) return;
+    if (ptyWs && (ptyWs.readyState === WebSocket.OPEN || ptyWs.readyState === WebSocket.CONNECTING)) {
+      return;
     }
 
-    if (ptyStatusText) {
-      ptyStatusText.textContent = 'Ulanmoqda...';
-      ptyStatusText.style.color = '#888';
+    if (ptyReconnectTimer) {
+      clearTimeout(ptyReconnectTimer);
+      ptyReconnectTimer = null;
     }
+    if (pingTimer) {
+      clearInterval(pingTimer);
+      pingTimer = null;
+    }
+
+    isConnecting = true;
+    setPtyStatus('Ulanmoqda...', 'connecting');
 
     try {
-      ptyWs = new WebSocket(getPtyStreamUrl());
+      const wsUrl = getPtyStreamUrl();
+      ptyWs = new WebSocket(wsUrl);
 
       ptyWs.onopen = () => {
-        if (ptyStatusText) {
-          ptyStatusText.textContent = 'Ulangan (Online)';
-          ptyStatusText.style.color = 'var(--accent-green)';
-        }
-        if (ptyFitAddon) {
+        isConnecting = false;
+        const isLocal = isCurrentHostLocal();
+        setPtyStatus(isLocal ? 'Ulangan (Lokal)' : 'Ulangan (Online)', 'online');
+        updateNetworkBadge();
+
+        if (ptyFitAddon && ptyTerm) {
           try {
             ptyFitAddon.fit();
             ptyWs.send(`\x01${ptyTerm.cols},${ptyTerm.rows}`);
@@ -1725,6 +301,14 @@
         }
         syncPtyViewport();
         if (ptyTerm) ptyTerm.focus();
+
+        // Keep-Alive ping
+        pingTimer = setInterval(() => {
+          if (ptyWs && ptyWs.readyState === WebSocket.OPEN) {
+            lastPingTs = Date.now();
+            try { ptyWs.send('{"type":"ping"}'); } catch (_) {}
+          }
+        }, 15000);
       };
 
       ptyWs.onmessage = (ev) => {
@@ -1734,200 +318,243 @@
       };
 
       ptyWs.onerror = () => {
-        if (ptyStatusText) {
-          ptyStatusText.textContent = 'Xatolik';
-          ptyStatusText.style.color = '#ff5555';
-        }
+        isConnecting = false;
+        setPtyStatus('Xatolik', 'error');
       };
 
-      ptyWs.onclose = () => {
-        if (ptyStatusText) {
-          ptyStatusText.textContent = 'Uzildi (Offline)';
-          ptyStatusText.style.color = '#888';
+      ptyWs.onclose = (ev) => {
+        isConnecting = false;
+        if (pingTimer) {
+          clearInterval(pingTimer);
+          pingTimer = null;
+        }
+
+        if (ev.code === 1008 || ev.code === 401) {
+          setPtyStatus('Avtorizatsiya xatosi', 'error');
+          localStorage.removeItem('desktop_auth_token');
+          authToken = null;
+          showToast('Sessiya muddati tugadi, qaytadan kiring', true);
+          showView('login-view');
+          return;
+        }
+
+        setPtyStatus('Uzildi (Qayta ulanmoqda...)', 'connecting');
+
+        // Avtomatik qayta ulanish (2 soniya)
+        if (currentView === 'pty-view') {
+          ptyReconnectTimer = setTimeout(() => {
+            connectPtyWs();
+          }, 2000);
         }
       };
     } catch (e) {
+      isConnecting = false;
+      setPtyStatus('Ulanib bo‘lmadi', 'error');
       console.error('PTY WS ulanish xatosi:', e);
     }
   }
 
-  // Menyu -> Original PTY Terminal
-  if (modePtyBtn) {
-    modePtyBtn.addEventListener('click', () => {
-      showView('pty-view');
-      initPtyTerminal();
+  // ================= 8. MOBIL VIRTUAL TUGMALAR =================
+  if (ptyVirtualKeys) {
+    ptyVirtualKeys.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pty-key-btn');
+      if (!btn || !ptyWs || ptyWs.readyState !== WebSocket.OPEN) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const code = btn.dataset.code;
+      const keyMap = {
+        'esc': '\x1b',
+        'tab': '\t',
+        'ctrl_c': '\x03',
+        'ctrl_d': '\x04',
+        'up': '\x1b[A',
+        'down': '\x1b[B',
+        'right': '\x1b[C',
+        'left': '\x1b[D',
+        'sudo': 'sudo ',
+        'enter': '\r'
+      };
+
+      const val = keyMap[code];
+      if (val) {
+        ptyWs.send(val);
+        if (ptyTerm) ptyTerm.focus();
+      }
     });
   }
 
-  // PTY navigatsiya tugmalari
-  if (ptyToScreenBtn) {
-    ptyToScreenBtn.addEventListener('click', () => {
-      enterScreenView();
-    });
-  }
-
-  if (ptyToShellBtn) {
-    ptyToShellBtn.addEventListener('click', () => {
-      showView('shell-view');
-    });
-  }
-
-  if (ptyToMenuBtn) {
-    ptyToMenuBtn.addEventListener('click', () => {
-      showView('welcome-view');
-    });
-  }
-
+  // ================= 9. TUGMALAR VA HARAKATLAR =================
   if (ptyReconnectBtn) {
-    ptyReconnectBtn.addEventListener('click', () => {
+    ptyReconnectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (ptyWs) {
+        try { ptyWs.close(); } catch (_) {}
+        ptyWs = null;
+      }
+      showToast('Qayta ulanmoqda...');
       connectPtyWs();
     });
   }
 
-  if (ptyLogoutBtn) {
-    ptyLogoutBtn.addEventListener('click', () => {
-      logoutSession();
+  if (ptyFullscreenBtn) {
+    ptyFullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
     });
   }
 
-  // ================= 15.2 SUZUVCHI VA SURILADIGAN CHIQISH TUGMASI (CIRCLE X FLOAT) =================
-  function makeDraggable(el, onClick) {
-    if (!el) return;
+  if (ptyLogoutBtn) {
+    ptyLogoutBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (confirm('Terminaldan chiqmoqchimisiz?')) {
+        try {
+          await fetch(getApiUrl('/api/logout'), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${authToken || ''}`,
+              'ngrok-skip-browser-warning': 'true'
+            },
+            credentials: 'include'
+          }).catch(() => {});
+        } catch (_) {}
 
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
-    let isDragging = false;
-    let hasMoved = false;
+        localStorage.removeItem('desktop_auth_token');
+        authToken = null;
+        if (ptyWs) {
+          try { ptyWs.close(); } catch (_) {}
+          ptyWs = null;
+        }
+        showView('login-view');
+        showToast('Tizimdan chiqildi');
+      }
+    });
+  }
 
-    const onPointerDown = (e) => {
-      if (e.button !== 0 && e.pointerType === 'mouse') return;
+  // ================= 10. LOGIN FORMASI =================
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
 
-      isDragging = true;
-      hasMoved = false;
-      startX = e.clientX;
-      startY = e.clientY;
+      if (!username || !password) return;
 
-      const rect = el.getBoundingClientRect();
-      initialLeft = rect.left;
-      initialTop = rect.top;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Kirilmoqda...';
+      if (loginError) loginError.classList.add('hidden');
 
       try {
-        el.setPointerCapture(e.pointerId);
-      } catch (_) {}
+        const res = await fetch(getApiUrl('/api/login'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            username,
+            password,
+            clientInfo: navigator.userAgent
+          })
+        });
 
-      el.addEventListener('pointermove', onPointerMove);
-      el.addEventListener('pointerup', onPointerUp);
-      el.addEventListener('pointercancel', onPointerUp);
-    };
+        const data = await res.json();
 
-    const onPointerMove = (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
+        if (data && data.success && data.token) {
+          authToken = data.token;
+          currentUsername = data.username || username;
+          localStorage.setItem('desktop_auth_token', authToken);
+          localStorage.setItem('desktop_username', currentUsername);
 
-      if (!hasMoved && Math.hypot(dx, dy) > 5) {
-        hasMoved = true;
-        el.classList.add('is-dragging');
-        el.classList.add('is-custom-pos');
-      }
+          if (data.lanHost) {
+            lanHost = data.lanHost;
+          }
 
-      if (hasMoved) {
-        let newLeft = initialLeft + dx;
-        let newTop = initialTop + dy;
+          submitBtn.textContent = 'Kirildi!';
+          showToast(`Xush kelibsiz, ${currentUsername}!`);
 
-        const elWidth = el.offsetWidth || 44;
-        const elHeight = el.offsetHeight || 44;
-        const maxLeft = window.innerWidth - elWidth - 8;
-        const maxTop = window.innerHeight - elHeight - 8;
-
-        newLeft = Math.max(8, Math.min(maxLeft, newLeft));
-        newTop = Math.max(8, Math.min(maxTop, newTop));
-
-        el.style.left = `${newLeft}px`;
-        el.style.top = `${newTop}px`;
-        el.style.right = 'auto';
-        el.style.bottom = 'auto';
-      }
-    };
-
-    const onPointerUp = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-
-      el.classList.remove('is-dragging');
-      try {
-        el.releasePointerCapture(e.pointerId);
-      } catch (_) {}
-
-      el.removeEventListener('pointermove', onPointerMove);
-      el.removeEventListener('pointerup', onPointerUp);
-      el.removeEventListener('pointercancel', onPointerUp);
-
-      if (!hasMoved) {
-        if (typeof onClick === 'function') {
-          onClick(e);
+          // TO'G'RIDAN-TO'G'RI TERMINALGA O'TISH (DASHBOARDSIZ)
+          initPtyTerminal();
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Kirish';
+          if (loginError) {
+            loginError.textContent = data.message || 'Login yoki parol xato!';
+            loginError.classList.remove('hidden');
+          }
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Kirish';
+        if (loginError) {
+          loginError.textContent = 'Serverga ulanishda xatolik yuz berdi!';
+          loginError.classList.remove('hidden');
         }
       }
-    };
-
-    el.addEventListener('pointerdown', onPointerDown);
-  }
-
-  if (ptyFloatExitBtn) {
-    makeDraggable(ptyFloatExitBtn, () => {
-      showView('welcome-view');
     });
   }
 
-  if (shellFloatExitBtn) {
-    makeDraggable(shellFloatExitBtn, () => {
-      showView('welcome-view');
-    });
+  // ================= 11. ILK YUKLANISH (INIT) =================
+  async function initConfig() {
+    const params = new URLSearchParams(window.location.search);
+    const qHost = params.get('host') || params.get('h');
+    if (qHost) {
+      remoteHost = qHost.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      localStorage.setItem('remote_desk_host', remoteHost);
+    }
+
+    const qToken = params.get('token') || params.get('t');
+    if (qToken) {
+      authToken = qToken;
+      localStorage.setItem('desktop_auth_token', qToken);
+    }
+
+    // Config olish (Vercel yoki Local)
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.host) {
+          remoteHost = data.host.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          localStorage.setItem('remote_desk_host', remoteHost);
+        }
+        if (data && data.lanHost) {
+          lanHost = data.lanHost;
+        }
+      }
+    } catch (_) {}
+
+    // Agar token bo'lsa -> Sessiyani tekshirish
+    if (authToken) {
+      try {
+        const authRes = await fetch(getApiUrl('/api/check-auth'), {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'ngrok-skip-browser-warning': 'true'
+          },
+          credentials: 'include'
+        }).catch(() => null);
+
+        if (authRes && authRes.ok) {
+          const authData = await authRes.json().catch(() => null);
+          if (authData && authData.authenticated) {
+            currentUsername = authData.username || '';
+            // TO'G'RIDAN-TO'G'RI TERMINALGA KIRISH!
+            initPtyTerminal();
+            return;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Agar token bo'lmasa yoki eskirgan bo'lsa -> Login
+    showView('login-view');
   }
 
-  // Virtual klaviatura tugmalari (mobil / planshet uchun qulaylik)
-  const PTY_KEY_MAP = {
-    'up': '\x1b[A',
-    'down': '\x1b[B',
-    'right': '\x1b[C',
-    'left': '\x1b[D',
-    'esc': '\x1b',
-    'tab': '\t',
-    'ctrl_c': '\x03',
-    'ctrl_d': '\x04',
-    'enter': '\r',
-    'sudo': 'sudo '
-  };
-
-  if (ptyVirtualKeys) {
-    const handleKeyAction = (e) => {
-      const btn = e.target.closest('.pty-key-btn');
-      if (!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      const code = btn.getAttribute('data-code');
-      const directKey = btn.getAttribute('data-key');
-      let payload = (code && PTY_KEY_MAP[code]) ? PTY_KEY_MAP[code] : directKey;
-      if (payload && payload.includes('\\x1b')) {
-        payload = payload.replace(/\\x1b/g, '\x1b').replace(/\\r/g, '\r').replace(/\\t/g, '\t').replace(/\\x03/g, '\x03').replace(/\\x04/g, '\x04');
-      }
-
-      if (payload && ptyWs && ptyWs.readyState === WebSocket.OPEN) {
-        ptyWs.send(payload);
-      }
-      if (ptyTerm) {
-        ptyTerm.focus();
-      }
-    };
-
-    ptyVirtualKeys.addEventListener('pointerdown', handleKeyAction);
-    ptyVirtualKeys.addEventListener('click', (e) => e.preventDefault());
-  }
-
-  // ================= 16. ISHGA TUSHIRISH =================
-  updateCwdUI();
   initConfig();
 })();
