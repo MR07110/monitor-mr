@@ -69,12 +69,20 @@ class VideoRTC extends HTMLElement {
          * [config] WebRTC configuration
          * @type {RTCConfiguration}
          */
+        this.updateRelayConfig = () => {
+            const urlParams = (typeof window !== 'undefined') ? new URLSearchParams(window.location.search) : new URLSearchParams();
+            this.forceRelay = urlParams.get('relay') === '1' || urlParams.get('cloud') === '1' || (typeof localStorage !== 'undefined' && localStorage.getItem('webrtc_force_relay') === '1');
+            if (this.pcConfig) {
+                this.pcConfig.iceTransportPolicy = this.forceRelay ? 'relay' : 'all';
+            }
+        };
+
         const urlParams = (typeof window !== 'undefined') ? new URLSearchParams(window.location.search) : new URLSearchParams();
-        const forceRelay = urlParams.get('relay') === '1' || urlParams.get('cloud') === '1';
+        this.forceRelay = urlParams.get('relay') === '1' || urlParams.get('cloud') === '1' || (typeof localStorage !== 'undefined' && localStorage.getItem('webrtc_force_relay') === '1');
 
         this.pcConfig = {
             bundlePolicy: 'max-bundle',
-            iceTransportPolicy: forceRelay ? 'relay' : 'all',
+            iceTransportPolicy: this.forceRelay ? 'relay' : 'all',
             iceServers: [
                 {
                     urls: [
@@ -541,6 +549,7 @@ class VideoRTC extends HTMLElement {
     }
 
     onwebrtc() {
+        if (typeof this.updateRelayConfig === 'function') this.updateRelayConfig();
         const pc = new RTCPeerConnection(this.pcConfig);
         this._mediaStream = new MediaStream();
         this.video.srcObject = this._mediaStream;
@@ -638,7 +647,7 @@ class VideoRTC extends HTMLElement {
             switch (msg.type) {
                 case 'webrtc/candidate':
                     if (!msg.value) return;
-                    if (forceRelay && (msg.value.includes(' 192.168.') || msg.value.includes(' 10.') || msg.value.includes(' 172.'))) return;
+                    if (this.forceRelay && (msg.value.includes(' 192.168.') || msg.value.includes(' 10.') || msg.value.includes(' 172.'))) return;
                     if (this.mode.includes('webrtc/tcp') && msg.value.includes(' udp ')) return;
 
                     if (!isRemoteDescSet) {

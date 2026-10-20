@@ -51,6 +51,9 @@
   const barMoreMenu = document.getElementById('bar-more-menu');
   const menuPipBtn = document.getElementById('menu-pip-btn');
   const menuReconnectBtn = document.getElementById('menu-reconnect-btn');
+  const menuRelayBtn = document.getElementById('menu-relay-btn');
+  const menuRelayText = document.getElementById('menu-relay-text');
+  const menuStreamInfo = document.getElementById('menu-stream-info');
   const menuLogoutBtn = document.getElementById('menu-logout-btn');
 
   // 4.1 Splash Overlay Elements
@@ -246,6 +249,11 @@
       authToken = qToken;
       localStorage.setItem('desktop_auth_token', qToken);
     }
+
+    if (params.get('relay') === '1' || params.get('cloud') === '1') {
+      localStorage.setItem('webrtc_force_relay', '1');
+    }
+    updateRelayUI();
 
     let lanHost = '192.168.1.106:7777';
     try {
@@ -1337,7 +1345,16 @@
       updateSplashStep(2, 'Ovoz va tasvir treklari qabul qilindi...');
     });
     videoEl.addEventListener('webrtc-connected', () => {
-      updateSplashStep(3, 'Lokal apparat oqimi ulandi, birinchi kadr kutilmoqda...');
+      updateSplashStep(3, 'Apparat video oqimi ulandi, kadrlar uzatilmoqda...');
+    });
+    videoEl.addEventListener('webrtc-stats', (e) => {
+      const { isLocal, rtt } = e.detail || {};
+      if (menuStreamInfo) {
+        menuStreamInfo.textContent = `20 FPS • H.264 Baseline • ${isLocal ? 'Lokal Wi-Fi' : 'Bulut Relay'} (${rtt})`;
+      }
+      if (menuRelayText) {
+        menuRelayText.textContent = isLocal ? 'Tarmoq: Lokal Wi-Fi (Tez)' : 'Tarmoq: Bulut Relay (Faol)';
+      }
     });
   }
 
@@ -1442,11 +1459,36 @@
     });
   }
 
+  function updateRelayUI() {
+    const isRelay = localStorage.getItem('webrtc_force_relay') === '1';
+    if (menuRelayText) {
+      menuRelayText.textContent = isRelay ? 'Tarmoq: Bulut Relay (Faol)' : 'Tarmoq: Lokal Wi-Fi (Tez)';
+    }
+  }
+
   // More menu -> Qayta ulanish (Reconnect)
   if (menuReconnectBtn) {
     menuReconnectBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (barMoreMenu) barMoreMenu.classList.add('hidden');
+      reconnectStream();
+    });
+  }
+
+  // More menu -> Tarmoq rejimini almashtirish (Lokal Wi-Fi / Bulut Relay)
+  if (menuRelayBtn) {
+    menuRelayBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (barMoreMenu) barMoreMenu.classList.add('hidden');
+      const isRelay = localStorage.getItem('webrtc_force_relay') === '1';
+      if (isRelay) {
+        localStorage.removeItem('webrtc_force_relay');
+        showToast('⚡ Lokal Wi-Fi rejimiga o‘tildi (Minimal kechikish)');
+      } else {
+        localStorage.setItem('webrtc_force_relay', '1');
+        showToast('🌐 Bulut Relay rejimiga o‘tildi (Router blokirovkasidan xoli)');
+      }
+      updateRelayUI();
       reconnectStream();
     });
   }
