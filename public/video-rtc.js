@@ -69,8 +69,12 @@ class VideoRTC extends HTMLElement {
          * [config] WebRTC configuration
          * @type {RTCConfiguration}
          */
+        const urlParams = (typeof window !== 'undefined') ? new URLSearchParams(window.location.search) : new URLSearchParams();
+        const forceRelay = urlParams.get('relay') === '1' || urlParams.get('cloud') === '1';
+
         this.pcConfig = {
             bundlePolicy: 'max-bundle',
+            iceTransportPolicy: forceRelay ? 'relay' : 'all',
             iceServers: [
                 {
                     urls: [
@@ -634,6 +638,7 @@ class VideoRTC extends HTMLElement {
             switch (msg.type) {
                 case 'webrtc/candidate':
                     if (!msg.value) return;
+                    if (forceRelay && (msg.value.includes(' 192.168.') || msg.value.includes(' 10.') || msg.value.includes(' 172.'))) return;
                     if (this.mode.includes('webrtc/tcp') && msg.value.includes(' udp ')) return;
 
                     if (!isRemoteDescSet) {
