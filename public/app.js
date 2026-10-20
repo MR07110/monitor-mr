@@ -157,6 +157,15 @@
         try { ptyWs.close(); } catch (_) {}
         ptyWs = null;
       }
+      if (ptyView) {
+        ptyView.style.height = '';
+        ptyView.style.top = '';
+        ptyView.classList.remove('keyboard-open');
+      }
+    } else {
+      setTimeout(() => {
+        syncPtyViewport();
+      }, 50);
     }
 
     if (viewId === 'screen-view') {
@@ -1609,8 +1618,50 @@
     return `${protocol}//${getHost()}/pty-stream${token}`;
   }
 
+  function syncPtyViewport() {
+    if (!ptyView || ptyView.classList.contains('hidden')) return;
+
+    if (window.visualViewport) {
+      const vv = window.visualViewport;
+      // Virtual klaviatura ochilganda (ekran 60px dan ortiq qisqarsa)
+      const isKeyboardOpen = (window.innerHeight - vv.height) > 60;
+
+      ptyView.style.height = `${vv.height}px`;
+      ptyView.style.top = `${vv.offsetTop}px`;
+
+      if (isKeyboardOpen) {
+        ptyView.classList.add('keyboard-open');
+      } else {
+        ptyView.classList.remove('keyboard-open');
+      }
+
+      if (ptyFitAddon && ptyTerm) {
+        try {
+          ptyFitAddon.fit();
+          if (ptyWs && ptyWs.readyState === WebSocket.OPEN) {
+            ptyWs.send(`\x01${ptyTerm.cols},${ptyTerm.rows}`);
+          }
+        } catch (_) {}
+      }
+    }
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncPtyViewport);
+    window.visualViewport.addEventListener('scroll', syncPtyViewport);
+  }
+
   function initPtyTerminal() {
     if (!ptyTerminalContainer) return;
+
+    if (ptyTerminalContainer && !ptyTerminalContainer._tapBound) {
+      ptyTerminalContainer._tapBound = true;
+      ptyTerminalContainer.addEventListener('pointerdown', () => {
+        if (ptyTerm) {
+          ptyTerm.focus();
+        }
+      });
+    }
 
     if (!ptyTerm) {
       if (typeof Terminal === 'undefined') {
@@ -1688,6 +1739,7 @@
           }
         } catch (_) {}
       }
+      syncPtyViewport();
       if (ptyTerm) ptyTerm.focus();
     }, 150);
   }
@@ -1717,6 +1769,7 @@
             ptyWs.send(`\x01${ptyTerm.cols},${ptyTerm.rows}`);
           } catch (_) {}
         }
+        syncPtyViewport();
         if (ptyTerm) ptyTerm.focus();
       };
 

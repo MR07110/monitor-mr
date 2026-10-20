@@ -1029,6 +1029,7 @@ video-rtc,
 /* ================= 8. ORIGINAL PTY TERMINAL VIEW ================= */
 #pty-view {
   background: #000000;
+  display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
@@ -1037,6 +1038,8 @@ video-rtc,
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  position: fixed;
+  inset: 0;
 }
 
 .pty-tag {
@@ -1078,19 +1081,24 @@ video-rtc,
 
 /* Mobil va planshetlarda virtual tugmalar (bottombar) ko'rsatiladi */
 .pty-virtual-keys {
-  height: 38px;
-  min-height: 38px;
+  min-height: 40px;
   background: #0c0c0c;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px;
+  padding: 4px 8px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom, 4px));
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
-  z-index: 10;
+  z-index: 20;
   flex-shrink: 0;
+  touch-action: pan-x;
+}
+
+#pty-view.keyboard-open .pty-virtual-keys {
+  padding-bottom: 4px;
 }
 
 /* Desktop kompyuterlarda virtual bottombar ko'rsatilmaydi */
