@@ -566,13 +566,20 @@
   function toggleAudio() {
     if (!videoEl) return;
     const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-    if (innerVideo) {
-      innerVideo.muted = !innerVideo.muted;
-      if (!innerVideo.muted) {
-        innerVideo.play().catch(() => {});
-      }
-      updateAudioUI(innerVideo.muted);
+    if (!innerVideo) return;
+
+    // Xost kompyuterning o'zida ovozni yoqish akustik rezonans (larsen echo screech) chiqarishini oldini olamiz
+    const isHostMachine = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (innerVideo.muted && isHostMachine) {
+      showToast("⚠️ Siz xost kompyuterning o‘zidasiz. Akustik aks-sado (g‘uvillash) oldini olish uchun ovoz faqat boshqa qurilmalarda yoqiladi.", true);
+      return;
     }
+
+    innerVideo.muted = !innerVideo.muted;
+    if (!innerVideo.muted) {
+      innerVideo.play().catch(() => {});
+    }
+    updateAudioUI(innerVideo.muted);
   }
 
   function togglePause() {
@@ -764,33 +771,15 @@
           const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
           if (innerVideo) {
             innerVideo.playsInline = true;
-            innerVideo.muted = false;
-            innerVideo.play().then(() => {
-              updateAudioUI(false);
-            }).catch(() => {
-              innerVideo.muted = true;
-              innerVideo.play().catch(() => {});
-              updateAudioUI(true);
-            });
-          }
-        } catch (e) {}
-      };
-
-      const unlockAudio = () => {
-        try {
-          const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
-          if (innerVideo && innerVideo.muted) {
-            innerVideo.muted = false;
-            innerVideo.play().then(() => {
-              updateAudioUI(false);
-            }).catch(() => {});
+            // Xavfsizlik: Akustik rezonans (larsen screech loop) oldini olish uchun stream sukut bo'yicha MUTED bo'lib boshlanadi
+            innerVideo.muted = true;
+            innerVideo.play().catch(() => {});
+            updateAudioUI(true);
           }
         } catch (e) {}
       };
 
       triggerPlay();
-      window.addEventListener('click', unlockAudio);
-      window.addEventListener('touchstart', unlockAudio, { passive: true });
 
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
       if (innerVideo) {
@@ -916,9 +905,9 @@
     try {
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
       if (innerVideo) {
-        innerVideo.muted = false;
+        innerVideo.muted = true;
         innerVideo.play().catch(() => {});
-        updateAudioUI(false);
+        updateAudioUI(true);
       }
     } catch (e) {}
     toggleFullscreen(true);
