@@ -575,8 +575,13 @@ class VideoRTC extends HTMLElement {
             this.send({type: 'webrtc/candidate', value: candidate});
         });
 
+        let disconnectWatchdog = null;
         pc.addEventListener('connectionstatechange', async () => {
             if (pc.connectionState === 'connected') {
+                if (disconnectWatchdog) {
+                    clearTimeout(disconnectWatchdog);
+                    disconnectWatchdog = null;
+                }
                 this.pcState = WebSocket.OPEN;
                 this.play();
                 try {
@@ -595,11 +600,38 @@ class VideoRTC extends HTMLElement {
                     });
                 } catch (e) {}
             } else if (pc.connectionState === 'failed') {
+                if (disconnectWatchdog) {
+                    clearTimeout(disconnectWatchdog);
+                    disconnectWatchdog = null;
+                }
                 pc.close();
 
                 this.pcState = WebSocket.CLOSED;
                 this.pc = null;
 
+                this.onconnect();
+            } else if (pc.connectionState === 'disconnected') {
+                if (!disconnectWatchdog) {
+                    disconnectWatchdog = setTimeout(() => {
+                        disconnectWatchdog = null;
+                        if (pc.connectionState === 'disconnected') {
+                            console.warn('[VideoRTC] WebRTC disconnected holatida qoldi, avtomatik qayta tiklanmoqda...');
+                            try { pc.close(); } catch (e) {}
+                            this.pcState = WebSocket.CLOSED;
+                            this.pc = null;
+                            this.onconnect();
+                        }
+                    }, 3500);
+                }
+            }
+        });
+
+        pc.addEventListener('iceconnectionstatechange', () => {
+            if (pc.iceConnectionState === 'failed') {
+                console.warn('[VideoRTC] ICE muvaffaqiyatsiz, qayta tiklanmoqda...');
+                try { pc.close(); } catch (e) {}
+                this.pcState = WebSocket.CLOSED;
+                this.pc = null;
                 this.onconnect();
             }
         });

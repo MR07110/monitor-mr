@@ -751,8 +751,96 @@
     }
   }
 
+  // ================= 10.2 EKRAN UYQUGA KETMASLIGI (WAKE LOCK) VA 20-40 SOAT WATCHDOG =================
+  let wakeLockSentinel = null;
+  let streamWatchdogTimer = null;
+  let lastVideoTime = -1;
+  let lastProgressTs = 0;
+
+  async function acquireScreenWakeLock() {
+    try {
+      if ('wakeLock' in navigator && !wakeLockSentinel) {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', () => {
+          wakeLockSentinel = null;
+          console.log('[WakeLock] Ekran qulfi bo‘shatildi');
+        });
+        console.log('[WakeLock] Ekran doimiy yoniq (20-40 soat uzluksiz rejim)');
+      }
+    } catch (err) {
+      console.warn('[WakeLock] Faollashtirilmadi:', err.message);
+    }
+  }
+
+  function releaseScreenWakeLock() {
+    if (wakeLockSentinel) {
+      try {
+        wakeLockSentinel.release().catch(() => {});
+      } catch (e) {}
+      wakeLockSentinel = null;
+    }
+  }
+
+  function startStreamWatchdog() {
+    stopStreamWatchdog();
+    lastVideoTime = -1;
+    lastProgressTs = Date.now();
+
+    streamWatchdogTimer = setInterval(() => {
+      if (currentView !== 'screen-view') return;
+      const innerVideo = videoEl ? (videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null)) : null;
+      if (!innerVideo) return;
+
+      // 1. Agar brauzer tasvirni to'xtatib qo'ysa, qayta o'ynatamiz
+      if (innerVideo.paused && innerVideo.readyState >= 2) {
+        innerVideo.play().catch(() => {});
+      }
+
+      // 2. Kadr muzlab qolganligini tekshirish (currentTime o'zgarishi lozim)
+      const curTime = innerVideo.currentTime;
+      if (curTime > 0.1 && Math.abs(curTime - lastVideoTime) < 0.05) {
+        // Agar 6 soniyadan ko'proq bir xil kadrda to'xtab qolsa (muzlagan)
+        if (Date.now() - lastProgressTs > 6000) {
+          console.warn('[Watchdog] Tasvir oqimi to‘xtab qolgani aniqlandi. Avtomatik tiklanmoqda...');
+          lastProgressTs = Date.now();
+          if (videoEl && typeof videoEl.onconnect === 'function') {
+            videoEl.onconnect();
+          }
+        }
+      } else {
+        lastVideoTime = curTime;
+        lastProgressTs = Date.now();
+      }
+    }, 3000);
+  }
+
+  function stopStreamWatchdog() {
+    if (streamWatchdogTimer) {
+      clearInterval(streamWatchdogTimer);
+      streamWatchdogTimer = null;
+    }
+  }
+
+  // Brauzer foni, telefon qulfi ochilganda yoki tabga qaytilganda
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentView === 'screen-view') {
+      acquireScreenWakeLock();
+      const innerVideo = videoEl ? (videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null)) : null;
+      if (innerVideo && innerVideo.paused) {
+        innerVideo.play().catch(() => {});
+      }
+      if (videoEl && (videoEl.pcState !== WebSocket.OPEN || !innerVideo || innerVideo.readyState < 2)) {
+        if (typeof videoEl.onconnect === 'function') {
+          videoEl.onconnect();
+        }
+      }
+    }
+  });
+
   function stopStream() {
     hideSplash();
+    stopStreamWatchdog();
+    releaseScreenWakeLock();
     prewarmStarted = false;
     isMicActive = false;
     updateMicUI(false);
@@ -775,6 +863,8 @@
     showSplash();
     showView('screen-view');
     startStream();
+    acquireScreenWakeLock();
+    startStreamWatchdog();
 
     try {
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
