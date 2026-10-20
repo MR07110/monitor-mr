@@ -3,32 +3,478 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>chichib qoydik eplay olmadik</title>
+  <title>chichib qoydik eplay olmadik — Post-Mortem Hisobot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #11131c;
+      --border: #1f2333;
+      --border-accent: #2e354f;
+      --text-main: #f0f2f8;
+      --text-muted: #8b92a8;
+      --accent-red: #ff5252;
+      --accent-amber: #ffb142;
+      --accent-green: #2ed573;
+      --accent-cyan: #70a1ff;
+      --accent-purple: #a55eea;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
     body {
-      background-color: #000000;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 40px 20px 80px;
       display: flex;
       justify-content: center;
-      align-items: center;
       min-height: 100vh;
-      text-align: center;
-      padding: 20px;
     }
-    h1 {
-      font-size: 2rem;
+
+    .container {
+      width: 100%;
+      max-width: 820px;
+    }
+
+    /* HEADER */
+    .header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge.red {
+      background: rgba(255, 82, 82, 0.12);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 82, 82, 0.3);
+    }
+
+    .badge.gray {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      box-shadow: 0 0 8px var(--accent-red);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    h1.title {
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      line-height: 1.25;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--accent-amber);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    .date {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* CARD SECTIONS */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-accent);
+    }
+
+    h2.card-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #ffffff;
+    }
+
+    h2.card-title .icon {
+      font-size: 1.3rem;
+    }
+
+    p {
+      color: #cbd3e6;
+      margin-bottom: 14px;
+      font-size: 15px;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* CHALLENGE ITEMS */
+    .challenge-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .challenge-item {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 8px;
+      padding: 16px 20px;
+    }
+
+    .challenge-item.red { border-left-color: var(--accent-red); }
+    .challenge-item.amber { border-left-color: var(--accent-amber); }
+    .challenge-item.purple { border-left-color: var(--accent-purple); }
+
+    .challenge-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .challenge-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      font-family: var(--font-mono);
+    }
+
+    .challenge-tag {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .challenge-desc {
+      font-size: 14px;
+      color: #b5bdd0;
+      line-height: 1.6;
+    }
+
+    /* CODE & METRICS */
+    code {
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ff9ff3;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 18px 0 10px;
+    }
+
+    .metric-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-red);
+      margin-bottom: 4px;
+    }
+
+    .metric-val.green { color: var(--accent-green); }
+
+    .metric-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* QUOTE BOX */
+    .quote-box {
+      background: rgba(255, 177, 66, 0.08);
+      border: 1px solid rgba(255, 177, 66, 0.25);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-style: italic;
+      color: #ffeaa7;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    /* LESSONS */
+    ul.lessons {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    ul.lessons li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 10px;
+      font-size: 14.5px;
+      color: #d1d8e0;
+    }
+
+    ul.lessons li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--accent-green);
+      font-weight: 700;
+    }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .footer a {
+      color: var(--accent-cyan);
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h1>chichib qoydik eplay olmadik</h1>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="badge-row">
+        <span class="badge red"><span class="pulse-dot"></span> Loyiha to‘xtatildi</span>
+        <span class="badge gray">Post-Mortem Hisobot</span>
+        <span class="badge gray">WebRTC Desktop Monitor</span>
+      </div>
+      <h1 class="title">chichib qoydik eplay olmadik</h1>
+      <div class="subtitle">Loyiha nega to‘xtatildi va qanday to‘siqlarga uchradik?</div>
+      <div class="date">Sana: 2026-yil 21-oktabr | Muallif: Muhamadrasul & Antigravity</div>
+    </header>
+
+    <!-- 1. MAQSAD NIMA EDI? -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🎯</span> Loyihaning Asl Maqsadi Nima Edi?</h2>
+      <p>
+        Bizning maqsadimiz — Linux (Niri Wayland) ish stolini apparatli H.264 (Intel VA-API) orqali yozib olib,
+        zamonaviy <strong>WebRTC</strong> texnologiyasi bilan 0ms kechikishda xuddi Telegram video qo‘ng‘irog‘i kabi
+        brauzerga (telefon yoki ikkinchi noutbukka) jonli efir sifatida uzatish hamda masofadan boshqarish edi.
+      </p>
+      <p>
+        Boshida barchasi lokal kompyuterda (localhost) mukammal, silliq va qotmasdan ishladi. Ammo ikkinchi qurilma
+        ulanishi bilan tizim kutilmagan qator apparat va tarmoq muammolariga duch keldi.
+      </p>
+    </section>
+
+    <!-- 2. DIAGNOSTIKA RAQAMLARI -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">📊</span> Qattiq Diagnostika (Hard Diagnostics) Raqamlari</h2>
+      <p>
+        Tizimda chuqur tarmoq diagnostikasi o‘tkazilganida, quyidagi g‘ayritabiiy raqamlar aniqlandi:
+      </p>
+
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-val green">1.3 ms</div>
+          <div class="metric-lbl">Xost → Router Ping (0% Loss)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">70% — 100%</div>
+          <div class="metric-lbl">Xost → 2-Kompyuter Packet Loss</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">1,916,726</div>
+          <div class="metric-lbl">Wi-Fi TX Retries (Urinishlar)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val">1.12 Mbps</div>
+          <div class="metric-lbl">TCP O‘tkazuvchanlik tushishi</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ASOSIY 5 TA QIYINCHILIK -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🚧</span> Qanday Qiyinchiliklar va To‘siqlar Bo‘ldi?</h2>
+      
+      <div class="challenge-list">
+
+        <!-- 1 -->
+        <div class="challenge-item red">
+          <div class="challenge-head">
+            <span class="challenge-title">1. 2.4 GHz Router va Intra-BSS / AP Isolation</span>
+            <span class="challenge-tag">Tarmoq To‘sig‘i</span>
+          </div>
+          <div class="challenge-desc">
+            Xost va ikkinchi noutbuk bitta uy Wi-Fi tarmog‘ida (2.4 GHz, 2-kanal, 7 ta faol qurilma) bo‘lganiga qaramay,
+            router ikki Wi-Fi mijoz o‘rtasidagi to‘g‘ridan-to‘g‘ri UDP paketlarini tashlab yubordi (packet drop). 
+            Xostning USB Wi-Fi dongli (Ralink MT7601U) yarim-dupleks (half-duplex) rejimida videoni routerga uzatib,
+            router esa uni ikkinchi mijozga qayta tarqatishga kuchi yetmay havo oqimida tiqilib qoldi.
+          </div>
+        </div>
+
+        <!-- 2 -->
+        <div class="challenge-item red">
+          <div class="challenge-head">
+            <span class="challenge-title">2. WebRTC va H.264 IDR Tayanch Kadrlar Paradoksi</span>
+            <span class="challenge-tag">Video Qotish Sababi</span>
+          </div>
+          <div class="challenge-desc">
+            Foydalanuvchi ta’kidlaganidek: <em>"2-3 sekund silliq o‘tib, keyin 2-3 sekund qotib qolardi"</em>.
+            Sababi: <code>wf-recorder</code> apparat kodlagichi IDR (Keyframe) kadrni har 6 soniyada bir marta chiqarardi (<code>idr_interval=6</code>).
+            Wi-Fi tarmog‘ida bittagina UDP paketi yo‘qolsa ham, H.264 dekoderi keyingi kadrlarni ocholmay to‘xtardi.
+            Natijada brauzer keyingi IDR kadr kelguncha 3–5 soniya muzlab qolar edi.
+          </div>
+        </div>
+
+        <!-- 3 -->
+        <div class="challenge-item amber">
+          <div class="challenge-head">
+            <span class="challenge-title">3. HTTPS va Mixed Content / HTTPS-First To‘sig‘i</span>
+            <span class="challenge-tag">Brauzer Xavfsizligi</span>
+          </div>
+          <div class="challenge-desc">
+            Vercel ilovasi <code>https://monitor-mr.vercel.app</code> (HTTPS) orqali ochilganida, brauzerlar xavfsizlik
+            talabi tufayli lokal <code>http://192.168.1.106:7777</code> ga ulanishni blokladi (Mixed Content).
+            Uni lokal IP ga yo‘naltirilganda esa Chrome’ning "HTTPS-First" himoyasi lokal HTTP ni majburan HTTPS ga aylantirib,
+            lokal IP'da sertifikat yo‘qligi sababli <strong>"This site can’t be reached (ERR_SSL_PROTOCOL_ERROR)"</strong> xatosini chiqardi.
+          </div>
+        </div>
+
+        <!-- 4 -->
+        <div class="challenge-item purple">
+          <div class="challenge-head">
+            <span class="challenge-title">4. Ovoz va Mikrofon Rezonansi (PipeWire / PulseAudio)</span>
+            <span class="challenge-tag">Audio Muammosi</span>
+          </div>
+          <div class="challenge-desc">
+            Kompyuterning ichki karnay ovozi bilan mikrofonini bitta <code>monitor_mix</code> null-sink'ga aralashtirish
+            va veb orqali 2 tomonlama gaplashish apparat darajasida akustik aks-sado (larsen echo screech) va uzilishlar keltirib chiqardi.
+            Shu sababli foydalanuvchi buyrug‘i bilan ovoz butunlay olib tashlandi.
+          </div>
+        </div>
+
+        <!-- 5 -->
+        <div class="challenge-item red">
+          <div class="challenge-head">
+            <span class="challenge-title">5. Qat’iy Shart: "Jismonan Hech Narsa Qilmasdan"</span>
+            <span class="challenge-tag">Fizik Cheklov</span>
+          </div>
+          <div class="challenge-desc">
+            Foydalanuvchining eng qat’iy talabi: LAN kabel ulamaslik, routerni sozlamaslik, 5 GHz ga o‘tmaslik va apparatga tegmaslik edi.
+            2.4 GHz chastotadagi USB dongle va 7 ta qurilma ulangan zaif router orqali, kabel ulamasdan 60FPS/30FPS WebRTC videoni
+            uzatishning fizik va dasturiy iloji qolmadi.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. QILINDI VA SINALDI -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🛠️</span> Nimalar Qilib Ko‘rildi?</h2>
+      <ul class="lessons">
+        <li>Intel VA-API apparatli tezlatgichi (H.264 hardware encoding) ulandi.</li>
+        <li>wf-recorder parametrlari 20 FPS, Constrained Baseline va 1 soniyalik IDR (<code>gop_size=20</code>) ga tushirildi.</li>
+        <li>Metered global TURN relay serverlari ulanib, router blokirovkasini aylanib o‘tish yoqildi.</li>
+        <li>Ovoz va mikrofon quvurlari butunlay kesib tashlandi.</li>
+        <li>xterm.js orqali sof PTY Terminal rejimi ishga tushirildi.</li>
+      </ul>
+
+      <div class="quote-box">
+        "Texnik jihatdan hamma yechimlar qo‘llandi, biroq jismoniy kabel va sifatli Wi-Fi kanalisiz,
+        havo orqali paketlar yo‘qolishini dasturiy sehr bilan tuzatib bo‘lmadi. Shu sababli kompyuterni
+        qiynamaslik uchun loyiha to‘liq va xavfsiz to‘xtatildi."
+      </div>
+    </section>
+
+    <!-- 5. HOZIRGI HOLAT -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">✅</span> Xavfsizlik va Hozirgi Holat</h2>
+      <p>
+        Barcha jarayonlar xavfsiz yakunlandi:
+      </p>
+      <ul class="lessons">
+        <li>Kompyuterdagi barcha portlar (<code>7777</code>, <code>8555</code>, <code>1984</code>) butunlay yopildi.</li>
+        <li><code>wf-recorder</code> va <code>go2rtc</code> jarayonlari o‘chirildi (CPU: 0%).</li>
+        <li>Ngrok tunneli butunlay uzildi va bekor qilindi (ERR_NGROK_3200).</li>
+        <li>GitHub repo tozalanib, faqatgina ushbu hisobot sahifasi qoldirildi.</li>
+      </ul>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>© 2026 MONITOR-MR. Barcha huquqlar saqlangan emas — eplay olmadik :)</p>
+      <p style="margin-top: 6px;">Repo: <a href="https://github.com/MR07110/monitor-mr" target="_blank">github.com/MR07110/monitor-mr</a></p>
+    </footer>
+
+  </div>
+
 </body>
 </html>
