@@ -202,32 +202,33 @@
   }
 
   // ================= 6. KONFIGURATSIYA VA AVTORIZATSIYA TEKSHIRUVI =================
-  function checkLocalWifi(lanHost, timeoutMs = 700) {
+  function checkLocalWifi(lanHost, timeoutMs = 1200) {
     return new Promise((resolve) => {
-      const img = new Image();
       let done = false;
       const timer = setTimeout(() => {
         if (!done) {
           done = true;
-          img.src = '';
           resolve(false);
         }
       }, timeoutMs);
 
-      img.onload = () => {
+      const finish = (val) => {
         if (!done) {
           done = true;
           clearTimeout(timer);
-          resolve(true);
+          resolve(val);
         }
       };
-      img.onerror = () => {
-        if (!done) {
-          done = true;
-          clearTimeout(timer);
-          resolve(true);
-        }
-      };
+
+      try {
+        fetch(`http://${lanHost}/health`, { mode: 'no-cors' })
+          .then(() => finish(true))
+          .catch(() => {});
+      } catch (_) {}
+
+      const img = new Image();
+      img.onload = () => finish(true);
+      img.onerror = () => finish(true);
       img.src = `http://${lanHost}/favicon.svg?_t=${Date.now()}`;
     });
   }
@@ -247,37 +248,25 @@
     }
 
     let lanHost = '192.168.1.106:7777';
-    if (!remoteHost) {
-      try {
-        const res = await fetch('/api/config');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.host) {
-            remoteHost = data.host.replace(/^https?:\/\//, '').replace(/\/$/, '');
-            localStorage.setItem('remote_desk_host', remoteHost);
-          }
-          if (data && data.lanHost) {
-            lanHost = data.lanHost;
-          }
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.host) {
+          remoteHost = data.host.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          localStorage.setItem('remote_desk_host', remoteHost);
         }
-      } catch (e) {}
-    }
-
-    // Uydan Vercel orqali kirilganda avtomatik lokal Wi-Fi (0ms) ga o'tish
-    const isCloudMode = params.get('cloud') === '1' || params.get('stay') === '1';
-    if (!isLocalHostName(window.location.hostname) && !isCloudMode) {
-      const isHome = await checkLocalWifi(lanHost, 500);
-      if (isHome) {
-        const currentToken = localStorage.getItem('desktop_auth_token') || authToken || '';
-        const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
-        window.location.replace(`http://${lanHost}/desktop${tokenParam}`);
-        return; // Splash screen saqlanadi, boshqa view'lar miltillab ochilmaydi
+        if (data && data.lanHost) {
+          lanHost = data.lanHost;
+        }
       }
-    }
+    } catch (e) {}
 
+    const isCloudMode = params.get('cloud') === '1' || params.get('stay') === '1';
+    const isLocal = isLocalHostName(window.location.hostname);
     const savedToken = localStorage.getItem('desktop_auth_token');
 
-    // Agar token saqlangan bo'lsa: Blok va Auth ni bir vaqtda (parallel) tezkor tekshiramiz
+    // Agar token saqlangan bo'lsa: Blok va Auth ni bir vaqtda tekshiramiz
     if (savedToken) {
       try {
         const [authRes, blockRes] = await Promise.all([
@@ -304,34 +293,70 @@
 
         if (authRes && authRes.ok) {
           const authData = await authRes.json().catch(() => null);
-          if (authData && authData.authenticated) {
-            authToken = authData.token || savedToken;
-            currentUsername = authData.username || localStorage.getItem('desktop_username') || 'muhamad';
-            if (authData.lanUrl) {
-              updateLanTip(authData.lanUrl);
+          if (authData) {
+            // Bir xil Wi-Fi da ekanligi aniqlansa: Vercel'dan local serverga darhol avtomatik o'tish
+            if (authData.isSameNetwork && !isLocal && !isCloudMode) {
+              const destHost = authData.lanHost || lanHost || '192.168.1.106:7777';
+              const currentToken = authData.token || savedToken || authToken || '';
+              const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
+              window.location.replace(`http://${destHost}/desktop/${tokenParam}`);
+              return;
             }
-            showWelcomeView(currentUsername);
-            return;
+
+            if (authData.authenticated) {
+              authToken = authData.token || savedToken;
+              currentUsername = authData.username || localStorage.getItem('desktop_username') || 'muhamad';
+              if (authData.lanUrl) {
+                updateLanTip(authData.lanUrl);
+              }
+              showWelcomeView(currentUsername);
+              return;
+            }
           }
         }
       } catch (e) {}
 
-      // Agar sessiya serverda tugagan bo'lsa
       localStorage.removeItem('desktop_auth_token');
       authToken = null;
     } else {
-      // Token bo'lmaganda faqat bloklanganlikni tekshiramiz
+      // Token bo'lmaganda: check-auth orqali bir xil Wi-Fi ekanligini tekshiramiz
       try {
-        const blockRes = await fetch(getApiUrl('/api/check-block'), {
-          headers: { 'ngrok-skip-browser-warning': 'true' }
-        });
-        if (blockRes.ok) {
-          const blockData = await blockRes.json();
+        const [authRes, blockRes] = await Promise.all([
+          fetch(getApiUrl('/api/check-auth'), {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          }).catch(() => null),
+          fetch(getApiUrl('/api/check-block'), {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          }).catch(() => null)
+        ]);
+
+        if (blockRes && blockRes.ok) {
+          const blockData = await blockRes.json().catch(() => null);
           if (blockData && blockData.blocked && blockData.retryAfterSeconds) {
             startBlockCountdown(blockData.retryAfterSeconds);
           }
         }
+
+        if (authRes && authRes.ok) {
+          const authData = await authRes.json().catch(() => null);
+          if (authData && authData.isSameNetwork && !isLocal && !isCloudMode) {
+            const destHost = authData.lanHost || lanHost || '192.168.1.106:7777';
+            window.location.replace(`http://${destHost}/desktop/`);
+            return;
+          }
+        }
       } catch (e) {}
+    }
+
+    // Secondary fallback: prob tekshiruvi
+    if (!isLocal && !isCloudMode) {
+      const isHome = await checkLocalWifi(lanHost, 1000);
+      if (isHome) {
+        const currentToken = localStorage.getItem('desktop_auth_token') || authToken || '';
+        const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
+        window.location.replace(`http://${lanHost}/desktop/${tokenParam}`);
+        return;
+      }
     }
 
     showView('login-view');
@@ -1576,11 +1601,16 @@
 
           const isCloudMode = new URLSearchParams(window.location.search).get('cloud') === '1';
           if (!isLocalHostName(window.location.hostname) && !isCloudMode) {
-            const destHost = data.lanIp ? `${data.lanIp}:7777` : '192.168.1.106:7777';
-            const isHome = await checkLocalWifi(destHost, 500);
+            const destHost = data.lanHost || (data.lanIp ? `${data.lanIp}:7777` : '192.168.1.106:7777');
+            if (data.isSameNetwork) {
+              showView('splash-view');
+              window.location.replace(`http://${destHost}/desktop/?token=${encodeURIComponent(authToken)}`);
+              return;
+            }
+            const isHome = await checkLocalWifi(destHost, 1000);
             if (isHome) {
               showView('splash-view');
-              window.location.replace(`http://${destHost}/desktop?token=${encodeURIComponent(authToken)}`);
+              window.location.replace(`http://${destHost}/desktop/?token=${encodeURIComponent(authToken)}`);
               return;
             }
             showWelcomeView(currentUsername);
