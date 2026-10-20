@@ -164,6 +164,13 @@
         ptyView.style.top = '';
         ptyView.classList.remove('keyboard-open');
       }
+      if (ptyFloatExitBtn) {
+        ptyFloatExitBtn.style.left = '';
+        ptyFloatExitBtn.style.top = '';
+        ptyFloatExitBtn.style.right = '';
+        ptyFloatExitBtn.style.bottom = '';
+        ptyFloatExitBtn.classList.remove('is-custom-pos');
+      }
     } else {
       setTimeout(() => {
         syncPtyViewport();
@@ -1878,6 +1885,7 @@
       if (!hasMoved && Math.hypot(dx, dy) > 5) {
         hasMoved = true;
         el.classList.add('is-dragging');
+        el.classList.add('is-custom-pos');
       }
 
       if (hasMoved) {
