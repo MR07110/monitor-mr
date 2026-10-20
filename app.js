@@ -86,6 +86,8 @@
   const ptyLogoutBtn = document.getElementById('pty-logout-btn');
   const ptyTerminalContainer = document.getElementById('pty-terminal-container');
   const ptyVirtualKeys = document.getElementById('pty-virtual-keys');
+  const ptyFloatExitBtn = document.getElementById('pty-float-exit-btn');
+  const shellFloatExitBtn = document.getElementById('shell-float-exit-btn');
 
   // ================= 4. HOLAT (STATE) =================
   let authToken = localStorage.getItem('desktop_auth_token') || null;
@@ -1833,6 +1835,102 @@
   if (ptyLogoutBtn) {
     ptyLogoutBtn.addEventListener('click', () => {
       logoutSession();
+    });
+  }
+
+  // ================= 15.2 SUZUVCHI VA SURILADIGAN CHIQISH TUGMASI (CIRCLE X FLOAT) =================
+  function makeDraggable(el, onClick) {
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+    let isDragging = false;
+    let hasMoved = false;
+
+    const onPointerDown = (e) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      isDragging = true;
+      hasMoved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      const rect = el.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch (_) {}
+
+      el.addEventListener('pointermove', onPointerMove);
+      el.addEventListener('pointerup', onPointerUp);
+      el.addEventListener('pointercancel', onPointerUp);
+    };
+
+    const onPointerMove = (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      if (!hasMoved && Math.hypot(dx, dy) > 5) {
+        hasMoved = true;
+        el.classList.add('is-dragging');
+      }
+
+      if (hasMoved) {
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        const elWidth = el.offsetWidth || 44;
+        const elHeight = el.offsetHeight || 44;
+        const maxLeft = window.innerWidth - elWidth - 8;
+        const maxTop = window.innerHeight - elHeight - 8;
+
+        newLeft = Math.max(8, Math.min(maxLeft, newLeft));
+        newTop = Math.max(8, Math.min(maxTop, newTop));
+
+        el.style.left = `${newLeft}px`;
+        el.style.top = `${newTop}px`;
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+      }
+    };
+
+    const onPointerUp = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      el.classList.remove('is-dragging');
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', onPointerUp);
+      el.removeEventListener('pointercancel', onPointerUp);
+
+      if (!hasMoved) {
+        if (typeof onClick === 'function') {
+          onClick(e);
+        }
+      }
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+  }
+
+  if (ptyFloatExitBtn) {
+    makeDraggable(ptyFloatExitBtn, () => {
+      showView('welcome-view');
+    });
+  }
+
+  if (shellFloatExitBtn) {
+    makeDraggable(shellFloatExitBtn, () => {
+      showView('welcome-view');
     });
   }
 
