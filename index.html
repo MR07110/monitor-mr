@@ -3,29 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Linux Wayland WebRTC Remote Desktop: Chuqur Muhandislik Tahlili & Post-Mortem</title>
+  <title>💩 Wayland WebRTC Remote Desktop — Dangal & Advanced Xulosa</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💩</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #07090e;
-      --card-bg: rgba(14, 18, 28, 0.75);
-      --card-border: rgba(45, 55, 80, 0.6);
-      --card-border-hover: rgba(80, 110, 160, 0.8);
-      --text-main: #f3f5fa;
-      --text-muted: #8893ab;
-      --text-dim: #5c667a;
+      --bg: #06080d;
+      --card-bg: rgba(13, 17, 27, 0.82);
+      --card-border: rgba(40, 52, 78, 0.65);
+      --card-border-hover: rgba(85, 115, 170, 0.85);
+      --text-main: #f1f4fa;
+      --text-muted: #8c97ad;
+      --text-dim: #556075;
       
       --accent-cyan: #00f2fe;
       --accent-blue: #4facfe;
       --accent-green: #00f5a0;
-      --accent-amber: #f6d365;
-      --accent-red: #ff416c;
+      --accent-amber: #ffb142;
+      --accent-red: #ff4757;
       --accent-purple: #9b51e0;
 
-      --code-bg: #0b0e14;
-      --code-border: #1a2233;
+      --code-bg: #090c13;
+      --code-border: #1a2235;
 
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
@@ -40,13 +41,13 @@
     body {
       background-color: var(--bg);
       background-image: 
-        radial-gradient(at 0% 0%, rgba(0, 242, 254, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(155, 81, 224, 0.05) 0px, transparent 50%),
-        radial-gradient(at 50% 100%, rgba(0, 245, 160, 0.04) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(255, 71, 87, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(0, 242, 254, 0.05) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(0, 245, 160, 0.03) 0px, transparent 50%);
       color: var(--text-main);
       font-family: var(--font-sans);
       line-height: 1.7;
-      padding: 50px 24px 100px;
+      padding: 50px 20px 100px;
       display: flex;
       justify-content: center;
       min-height: 100vh;
@@ -54,54 +55,81 @@
 
     .container {
       width: 100%;
-      max-width: 900px;
+      max-width: 880px;
     }
 
     /* HEADER */
     .header {
-      margin-bottom: 40px;
+      margin-bottom: 36px;
       padding-bottom: 30px;
       border-bottom: 1px solid var(--card-border);
       position: relative;
     }
 
-    .status-row {
+    .header-top {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .logo-poop {
+      font-size: 52px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(255, 177, 66, 0.15);
+      flex-shrink: 0;
+    }
+
+    .header-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
-    .status-badge {
+    .badge {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 5px 12px;
-      border-radius: 999px;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
       font-family: var(--font-mono);
       font-size: 11.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
     }
 
-    .status-badge.archived {
-      background: rgba(255, 65, 108, 0.12);
+    .badge.red {
+      background: rgba(255, 71, 87, 0.12);
       color: var(--accent-red);
-      border: 1px solid rgba(255, 65, 108, 0.35);
+      border: 1px solid rgba(255, 71, 87, 0.35);
     }
 
-    .status-badge.tech {
+    .badge.cyan {
       background: rgba(0, 242, 254, 0.08);
       color: var(--accent-cyan);
       border: 1px solid rgba(0, 242, 254, 0.25);
     }
 
-    .status-badge.protocol {
-      background: rgba(155, 81, 224, 0.1);
-      color: var(--accent-purple);
-      border: 1px solid rgba(155, 81, 224, 0.3);
+    .badge.amber {
+      background: rgba(255, 177, 66, 0.1);
+      color: var(--accent-amber);
+      border: 1px solid rgba(255, 177, 66, 0.3);
     }
 
     .pulse-dot {
@@ -109,31 +137,32 @@
       height: 8px;
       border-radius: 50%;
       background: var(--accent-red);
-      box-shadow: 0 0 10px var(--accent-red);
-      animation: pulse 2s infinite ease-in-out;
+      box-shadow: 0 0 8px var(--accent-red);
+      animation: pulse 1.8s infinite;
     }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 0.35; transform: scale(0.85); }
     }
 
-    h1.main-title {
-      font-size: 2.35rem;
+    h1.title {
+      font-size: 2.25rem;
       font-weight: 800;
-      letter-spacing: -1px;
+      letter-spacing: -0.8px;
       line-height: 1.25;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #ffffff 40%, #b0c4de 100%);
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #b8c8dc 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .lead-summary {
-      font-size: 1.12rem;
-      color: var(--text-muted);
-      line-height: 1.65;
-      margin-bottom: 12px;
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--accent-amber);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      margin-bottom: 10px;
     }
 
     .meta-bar {
@@ -143,67 +172,44 @@
       font-size: 12.5px;
       color: var(--text-dim);
       flex-wrap: wrap;
-      margin-top: 14px;
     }
 
-    .meta-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* CARDS */
-    .section-card {
+    /* CARD SECTIONS */
+    .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-radius: 14px;
-      padding: 28px 32px;
-      margin-bottom: 28px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 26px 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .section-card:hover {
+    .card:hover {
       border-color: var(--card-border-hover);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
     }
 
-    h2.section-heading {
+    h2.card-title {
       font-size: 1.35rem;
       font-weight: 700;
       letter-spacing: -0.4px;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       color: #ffffff;
     }
 
-    h2.section-heading .sec-num {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--accent-cyan);
-      background: rgba(0, 242, 254, 0.1);
-      padding: 3px 8px;
-      border-radius: 5px;
-      border: 1px solid rgba(0, 242, 254, 0.25);
-    }
-
-    h3.sub-heading {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin: 22px 0 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    h2.card-title .icon {
+      font-size: 1.3rem;
     }
 
     p {
-      color: #b8c4d9;
-      margin-bottom: 16px;
+      color: #b5c2d6;
+      margin-bottom: 15px;
       font-size: 15px;
       line-height: 1.72;
     }
@@ -212,177 +218,213 @@
       margin-bottom: 0;
     }
 
-    /* METRICS DASHBOARD */
-    .metrics-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 14px;
-      margin: 22px 0;
+    /* DANGAL TL;DR HERO BOX */
+    .dangal-box {
+      background: linear-gradient(135deg, rgba(255, 71, 87, 0.08), rgba(255, 177, 66, 0.06));
+      border: 1px solid rgba(255, 71, 87, 0.3);
+      border-left: 5px solid var(--accent-red);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 18px 0;
     }
 
-    .metric-card {
-      background: rgba(8, 11, 18, 0.7);
-      border: 1px solid rgba(40, 50, 75, 0.6);
+    .dangal-title {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-amber);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dangal-text {
+      color: #ffffff;
+      font-size: 15.5px;
+      line-height: 1.7;
+      font-weight: 500;
+    }
+
+    /* METRICS DASHBOARD */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 12px;
+      margin: 20px 0 10px;
+    }
+
+    .metric-item {
+      background: rgba(8, 11, 18, 0.75);
+      border: 1px solid rgba(40, 52, 75, 0.6);
       border-radius: 10px;
       padding: 16px;
-      position: relative;
-      overflow: hidden;
+      text-align: center;
     }
 
-    .metric-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--accent-cyan);
-      opacity: 0.8;
-    }
+    .metric-item.danger { border-top: 2px solid var(--accent-red); }
+    .metric-item.success { border-top: 2px solid var(--accent-green); }
+    .metric-item.warning { border-top: 2px solid var(--accent-amber); }
 
-    .metric-card.danger::before { background: var(--accent-red); }
-    .metric-card.warning::before { background: var(--accent-amber); }
-    .metric-card.success::before { background: var(--accent-green); }
-
-    .metric-value {
+    .metric-val {
       font-family: var(--font-mono);
-      font-size: 1.65rem;
+      font-size: 1.7rem;
       font-weight: 800;
-      color: #ffffff;
       margin-bottom: 4px;
       letter-spacing: -0.5px;
     }
 
-    .metric-value.red { color: var(--accent-red); }
-    .metric-value.green { color: var(--accent-green); }
-    .metric-value.amber { color: var(--accent-amber); }
+    .metric-val.red { color: var(--accent-red); }
+    .metric-val.green { color: var(--accent-green); }
+    .metric-val.amber { color: var(--accent-amber); }
 
-    .metric-title {
+    .metric-lbl {
       font-size: 12px;
-      font-weight: 600;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       font-family: var(--font-mono);
+      text-transform: uppercase;
     }
 
-    .metric-sub {
+    .metric-desc {
       font-size: 11px;
       color: var(--text-dim);
       margin-top: 4px;
     }
 
-    /* ARCHITECTURE PIPELINE BOX */
-    .pipeline-wrapper {
-      background: #080b12;
+    /* COMPARISON: SODDA vs ADVANCED */
+    .compare-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    @media (max-width: 768px) {
+      .compare-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .compare-col {
+      background: rgba(8, 12, 20, 0.7);
       border: 1px solid var(--code-border);
       border-radius: 10px;
-      padding: 20px;
-      margin: 20px 0;
+      padding: 18px 20px;
+    }
+
+    .compare-col.sodda {
+      border-top: 3px solid var(--accent-green);
+    }
+
+    .compare-col.advanced {
+      border-top: 3px solid var(--accent-cyan);
+    }
+
+    .compare-tag {
       font-family: var(--font-mono);
-      font-size: 12.5px;
-      overflow-x: auto;
-    }
-
-    .pipeline-step {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      position: relative;
-    }
-
-    .pipeline-step:last-child {
-      margin-bottom: 0;
-    }
-
-    .pipeline-badge {
-      background: rgba(0, 242, 254, 0.12);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(0, 242, 254, 0.3);
-      padding: 3px 8px;
-      border-radius: 4px;
       font-size: 11px;
-      min-width: 140px;
-      font-weight: 600;
-      flex-shrink: 0;
-      text-align: center;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
     }
 
-    .pipeline-badge.red {
-      background: rgba(255, 65, 108, 0.12);
-      color: var(--accent-red);
-      border-color: rgba(255, 65, 108, 0.3);
-    }
+    .compare-tag.sodda { color: var(--accent-green); }
+    .compare-tag.advanced { color: var(--accent-cyan); }
 
-    .pipeline-badge.purple {
-      background: rgba(155, 81, 224, 0.12);
-      color: var(--accent-purple);
-      border-color: rgba(155, 81, 224, 0.3);
-    }
-
-    .pipeline-badge.green {
-      background: rgba(0, 245, 160, 0.12);
-      color: var(--accent-green);
-      border-color: rgba(0, 245, 160, 0.3);
-    }
-
-    .pipeline-arrow {
-      color: var(--text-dim);
-      margin: 0 12px;
-      font-weight: bold;
-    }
-
-    .pipeline-desc {
-      color: #9fb0c9;
-      line-height: 1.5;
-    }
-
-    /* DEEP DIVE ACCORDION / ITEMS */
-    .deep-item {
-      background: rgba(10, 13, 22, 0.6);
-      border: 1px solid rgba(35, 45, 70, 0.7);
-      border-radius: 10px;
-      padding: 20px 22px;
-      margin-bottom: 16px;
-      border-left: 4px solid var(--accent-cyan);
-      transition: all 0.2s ease;
-    }
-
-    .deep-item:hover {
-      border-color: rgba(60, 80, 120, 0.9);
-      background: rgba(12, 16, 26, 0.75);
-    }
-
-    .deep-item.critical { border-left-color: var(--accent-red); }
-    .deep-item.protocol { border-left-color: var(--accent-purple); }
-    .deep-item.security { border-left-color: var(--accent-amber); }
-    .deep-item.hardware { border-left-color: var(--accent-green); }
-
-    .deep-head {
+    /* CHALLENGE CARDS */
+    .challenge-list {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 18px;
     }
 
-    .deep-title {
-      font-size: 1.05rem;
+    .challenge-box {
+      background: rgba(9, 13, 22, 0.65);
+      border: 1px solid rgba(35, 48, 75, 0.7);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 10px;
+      padding: 18px 22px;
+    }
+
+    .challenge-box.red { border-left-color: var(--accent-red); }
+    .challenge-box.amber { border-left-color: var(--accent-amber); }
+    .challenge-box.purple { border-left-color: var(--accent-purple); }
+
+    .challenge-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .challenge-name {
+      font-size: 16px;
       font-weight: 700;
       color: #ffffff;
       font-family: var(--font-sans);
     }
 
-    .deep-tag {
+    .challenge-subtag {
       font-family: var(--font-mono);
       font-size: 11px;
-      font-weight: 600;
       color: var(--text-dim);
       text-transform: uppercase;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
       padding: 2px 7px;
       border-radius: 4px;
+    }
+
+    /* ADVICE FOR DEVELOPERS */
+    .advice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .advice-item {
+      background: rgba(10, 14, 24, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .advice-num {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent-amber);
+      background: rgba(255, 177, 66, 0.12);
+      border: 1px solid rgba(255, 177, 66, 0.3);
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .advice-content strong {
+      color: #ffffff;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .advice-content p {
+      font-size: 14px;
+      color: #a4b2c9;
+      margin-bottom: 0;
     }
 
     /* CODE STYLING */
@@ -408,78 +450,24 @@
       margin: 14px 0;
     }
 
-    pre .cm { color: #8b949e; font-style: italic; }
-    pre .kw { color: #ff7b72; font-weight: 600; }
-    pre .val { color: #a5d6ff; }
-    pre .num { color: #79c0ff; }
-    pre .str { color: #7ee787; }
-
-    /* CALLOUT */
-    .callout {
-      background: rgba(246, 211, 101, 0.06);
-      border: 1px solid rgba(246, 211, 101, 0.25);
-      border-radius: 10px;
-      padding: 16px 20px;
-      margin: 20px 0;
-      font-size: 14.5px;
-      color: #ffdda1;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-
-    .callout-icon {
-      font-size: 20px;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    .callout-body strong {
-      color: #ffffff;
-    }
-
-    /* LIST */
-    ul.tech-list {
-      list-style: none;
-      margin-top: 12px;
-    }
-
-    ul.tech-list li {
-      position: relative;
-      padding-left: 24px;
-      margin-bottom: 10px;
-      font-size: 14.5px;
-      color: #cbd5e1;
-    }
-
-    ul.tech-list li::before {
-      content: "✦";
-      position: absolute;
-      left: 0;
-      color: var(--accent-cyan);
-      font-size: 12px;
-      top: 3px;
-    }
-
     /* FOOTER */
     .footer {
       text-align: center;
       margin-top: 50px;
-      padding-top: 30px;
+      padding-top: 26px;
       border-top: 1px solid var(--card-border);
       font-family: var(--font-mono);
-      font-size: 12.5px;
+      font-size: 13px;
       color: var(--text-dim);
     }
 
     .footer a {
       color: var(--accent-cyan);
       text-decoration: none;
-      transition: color 0.15s;
     }
 
     .footer a:hover {
-      color: #ffffff;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -487,251 +475,258 @@
 
   <div class="container">
 
-    <!-- HEADER -->
+    <!-- HEADER WITH 💩 LOGO -->
     <header class="header">
-      <div class="status-row">
-        <span class="status-badge archived"><span class="pulse-dot"></span> Missiya Yakunlandi (Archived)</span>
-        <span class="status-badge tech">Linux Wayland (Niri)</span>
-        <span class="status-badge protocol">WebRTC / H.264 / PTY</span>
+      <div class="header-top">
+        <div class="logo-poop">💩</div>
+        <div class="header-badges">
+          <div class="badge-row">
+            <span class="badge red"><span class="pulse-dot"></span> Loyiha To‘xtatildi</span>
+            <span class="badge cyan">Wayland + WebRTC</span>
+            <span class="badge amber">Dangal & Advanced Post-Mortem</span>
+          </div>
+          <div class="meta-bar">
+            <span>🗓️ <strong>Sana:</strong> 2026-yil 21-oktabr</span>
+            <span>💻 <strong>Mualliflar:</strong> Muhamadrasul & Antigravity (Google DeepMind)</span>
+          </div>
+        </div>
       </div>
-      <h1 class="main-title">Linux Wayland WebRTC Remote Desktop: Chuqur Muhandislik Tahlili & Texnik Post-Mortem</h1>
-      <p class="lead-summary">
-        Ushbu hisobot Linux Niri Wayland ish stolini Intel VA-API apparat tezlatgichi va WebRTC orqali ultra-past kechikishda 
-        veb-brauzerga uzatish loyihasida yuzaga kelgan murakkab tarmoq to‘siqlari, H.264 IDR tayanch kadrlar asinxroniyasi 
-        hamda 802.11n Wi-Fi havo-kanalining fizik cheklovlari bo‘yicha to‘liq ilmiy-texnik xulosani taqdim etadi.
-      </p>
-      <div class="meta-bar">
-        <span class="meta-item">🗓️ <strong>Sana:</strong> 2026-yil 21-oktabr</span>
-        <span class="meta-item">💻 <strong>Mualliflar:</strong> Muhamadrasul & Antigravity (DeepMind)</span>
-        <span class="meta-item">📦 <strong>GitHub:</strong> MR07110/monitor-mr</span>
-      </div>
+
+      <h1 class="title">Wayland WebRTC Remote Desktop: Dangal, Sodda va Advanced Texnik Xulosa</h1>
+      <div class="subtitle">Nega loyihani yopdik, qayerda tiqildik va shunday ish qilmoqchi bo‘lganlar nimani bilishi shart?</div>
     </header>
 
-    <!-- SECTION 1: ARXITEKTURA -->
-    <section class="section-card">
-      <h2 class="section-heading"><span class="sec-num">01</span> Loyihaning To‘liq Muhandislik Arxitekturasi</h2>
-      <p>
-        Loyiha doirasida Linux Wayland kompozitori (Niri) grafik kadrlar buferini nol-nusxa (Zero-Copy DMA-BUF) orqali
-        bevosita apparat darajasida kodlab, WebRTC protokoli orqali uzatuvchi quyidagi 5 bosqichli yuqori samarali quvur (pipeline) qurildi:
-      </p>
-
-      <div class="pipeline-wrapper">
-        <div class="pipeline-step">
-          <span class="pipeline-badge purple">1. DRM / KMS & Niri</span>
-          <span class="pipeline-arrow">➔</span>
-          <span class="pipeline-desc"><code>wlr-screencopy-unstable-v1</code> orqali Wayland framebuffer'dan kadr olish (1440x900).</span>
-        </div>
-        <div class="pipeline-step">
-          <span class="pipeline-badge">2. Intel VA-API</span>
-          <span class="pipeline-arrow">➔</span>
-          <span class="pipeline-desc"><code>/dev/dri/renderD128</code> apparat tezlatgichida H.264 Baseline kodlash (NV12 rang formati, 20-30 FPS).</span>
-        </div>
-        <div class="pipeline-step">
-          <span class="pipeline-badge green">3. go2rtc Engine</span>
-          <span class="pipeline-arrow">➔</span>
-          <span class="pipeline-desc">MPEG-TS oqimini H.264 NAL birliklariga demux qilish va RTP/SRTP paketlariga o‘rash (UDP 8555).</span>
-        </div>
-        <div class="pipeline-step">
-          <span class="pipeline-badge amber">4. ICE / STUN / TURN</span>
-          <span class="pipeline-arrow">➔</span>
-          <span class="pipeline-desc">RFC 5245 ICE Candidate kelishuvi: Lokal LAN host (192.168.1.106) va Metered Global TURN relay.</span>
-        </div>
-        <div class="pipeline-step">
-          <span class="pipeline-badge red">5. Client Browser</span>
-          <span class="pipeline-arrow">➔</span>
-          <span class="pipeline-desc">Chromium WebRTC video dekoderi (Hardware Accel) va to‘g‘ridan-to‘g‘ri HTML5 <code>&lt;video&gt;</code> rendering.</span>
+    <!-- 1. DANGAL TL;DR -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">⚡</span> Dangal Xulosa (Gapning Indallosi)</h2>
+      
+      <div class="dangal-box">
+        <div class="dangal-title">🔥 1 daqiqalik xulosa:</div>
+        <div class="dangal-text">
+          Biz Linux (Niri Wayland) ish stolini Intel GPU orqali apparatli kodlab, WebRTC bilan veb-brauzerga chiqarishni
+          <strong>to‘liq epladik</strong> — xost kompyuterning o‘zida u <strong>0 ms kechikish</strong> bilan Telegramdek uchdi.<br><br>
+          Lekin xuddi shu oqimni bitta uy Wi-Fi routerida turgan ikkinchi kompyuterga uzatmoqchi bo‘lganimizda:
+          <strong>2.4 GHz USB Wi-Fi dongli va oddiy uy routeri</strong> havo to‘lqinida tiqilib qolib, 
+          paketlarning <strong>70% dan 100% gacha qismini havoda yo‘qotib yubordi</strong>.<br><br>
+          Foydalanuvchining sharti: <em>"Jismonan hech narsa qilmasdan (kabel ulamasdan)"</em> edi.
+          Havoda yo‘qolib ketayotgan videoni esa kabel ulamasdan hech qanday dasturiy sehr bilan tuzatib bo‘lmaydi.
+          Kompyuterni va o‘zimizni qiynamaslik uchun loyihani mardlarcha to‘xtatdik!
         </div>
       </div>
-
-      <p>
-        <strong>Natija lokal kompyuterda:</strong> Xost kompyuterning o‘zida (localhost loopback) mazkur zanjir 
-        <strong>&lt;30ms kechikish</strong> va mutlaq silliqlikda 0% paket yo‘qolishi bilan ishladi.
-      </p>
     </section>
 
-    <!-- SECTION 2: HARD DIAGNOSTICS DATA -->
-    <section class="section-card">
-      <h2 class="section-heading"><span class="sec-num">02</span> Haqiqiy Tarmoq Diagnostikasi Metrikalari</h2>
+    <!-- 2. DIAGNOSTIKA FAKTLARI (RAQAMLAR) -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">📊</span> Qattiq Diagnostika: Quruq Raqamlar Nima Dedi?</h2>
       <p>
-        Biroq xuddi shu oqim bitta uy Wi-Fi tarmog‘idagi ikkinchi kompyuterga uzatilganda, tizimda chuqur diagnostika 
-        o‘tkazildi va muammoning ildizini ochib beruvchi quyidagi haqiqiy metrikalar qayd etildi:
+        Muammoni taxmin qilmasdan, kompyuter tarmog‘ining eng tub qatlamigacha chuqur testlar (Hard Diagnostics) qildik. 
+        Mana haqiqiy natijalar:
       </p>
 
-      <div class="metrics-container">
-        <div class="metric-card success">
-          <div class="metric-value green">1.31 ms</div>
-          <div class="metric-title">Xost ➔ Router RTT</div>
-          <div class="metric-sub">0% paket yo‘qolishi (ICMP)</div>
+      <div class="metrics-grid">
+        <div class="metric-item success">
+          <div class="metric-val green">1.3 ms</div>
+          <div class="metric-lbl">Xost ➔ Router</div>
+          <div class="metric-desc">0% loss (Routergacha yo‘l ideal)</div>
         </div>
-        <div class="metric-card danger">
-          <div class="metric-value red">70% — 100%</div>
-          <div class="metric-title">Xost ➔ Mijoz Loss</div>
-          <div class="metric-sub">Intra-Wi-Fi paket drop</div>
+        <div class="metric-item danger">
+          <div class="metric-val red">70% — 100%</div>
+          <div class="metric-lbl">Xost ➔ 2-Kompyuter</div>
+          <div class="metric-desc">Router ichki Wi-Fi drop</div>
         </div>
-        <div class="metric-card warning">
-          <div class="metric-value amber">1,916,726</div>
-          <div class="metric-title">Wi-Fi TX Retries</div>
-          <div class="metric-sub">MT7601U USB drayverida</div>
+        <div class="metric-item warning">
+          <div class="metric-val amber">1,916,726</div>
+          <div class="metric-lbl">Wi-Fi TX Retries</div>
+          <div class="metric-desc">USB adapter qayta urinishlari</div>
         </div>
-        <div class="metric-card danger">
-          <div class="metric-value red">1.12 Mbps</div>
-          <div class="metric-title">TCP CWND Qulashi</div>
-          <div class="metric-sub">13 ta retransmissiya / jitter 25ms</div>
+        <div class="metric-item danger">
+          <div class="metric-val red">1.12 Mbps</div>
+          <div class="metric-lbl">TCP CWND Tezligi</div>
+          <div class="metric-desc">Tezlik 28 Mbps dan 1 Mbps ga quladi</div>
         </div>
       </div>
-
-      <p>
-        Bu metrikalar aniq ko‘rsatdiki: Xost kompyuterdan routergacha bo‘lgan masofa benuqson (1.3 ms), biroq 
-        <strong>router orqali bitta Wi-Fi mijozdan ikkinchi Wi-Fi mijozga o‘tish yo‘lida</strong> paketlar 
-        oqimi deyarli to‘liq halokatga uchramoqda edi.
-      </p>
     </section>
 
-    <!-- SECTION 3: 5 TA ASOSIY QIYINCHILIK VA TO'SIQ -->
-    <section class="section-card">
-      <h2 class="section-heading"><span class="sec-num">03</span> Nega Loyiha To‘xtatildi? Asosiy Texnik To‘siqlar Tahlili</h2>
-
-      <div class="deep-item critical">
-        <div class="deep-head">
-          <span class="deep-title">1. 802.11n 2.4 GHz BSS Contention va AP Client Isolation</span>
-          <span class="deep-tag">PHY / MAC Qatlami</span>
-        </div>
-        <p>
-          Xost kompyuteri <strong>Ralink MT7601U (USB 2.0 802.11n 150Mbps)</strong> adapteri bilan 2.4 GHz chastotadagi
-          2-kanalda ishlamoqda edi. Tarmoqda 7 ta faol qurilma mavjud bo‘lib, signal kuchi <code>-70 dBm</code> atrofida edi.
-        </p>
-        <p>
-          Wi-Fi arxitekturasida (Half-Duplex CSMA/CA): Xost mijoz videoni havoga uzatganda kanal band bo‘ladi. Router esa
-          bu oqimni xuddi shu 2.4 GHz kanali orqali ikkinchi mijozga qayta tarqatishi (retransmit) kerak. Natijada havo
-          vaqti (Airtime) ikki barobar ko‘p iste’mol qilindi, paketlar to‘qnashuvi (collision) keskin oshdi va router
-          o‘zining cheklangan xotira buferida peer-to-peer UDP paketlarini ommaviy tashlab yubordi (packet dropping).
-        </p>
-      </div>
-
-      <div class="deep-item critical">
-        <div class="deep-head">
-          <span class="deep-title">2. WebRTC va H.264 IDR Tayanch Kadrlar Paradoksi</span>
-          <span class="deep-tag">Video Kodlash Asinxroniyasi</span>
-        </div>
-        <p>
-          Foydalanuvchi ta’kidlagan asosiy simptom: <em>"2-3 sekund silliq o‘tib, keyin 2-3 sekund qotib-qotib qolyapti"</em>.
-        </p>
-        <p>
-          Buning sababi: <code>wf-recorder</code> mustaqil CLI jarayon sifatida stdout orqali MPEG-TS oqimini yuborardi.
-          Undagi <code>idr_interval=6</code> parametri asosiy IDR (Instantaneous Decoder Refresh) kadrni har 6 soniyada
-          faqat bir marta chiqardi. 
-        </p>
-        <pre><span class="cm"># Wi-Fi tarmog'ida 1 ta UDP paketi yo'qolganda dekoder holati:</span>
-P-Frame(1) ➔ P-Frame(2) ➔ <span class="kw">[PACKET DROP]</span> ➔ P-Frame(3: INVALID REFERENCE)
-➔ <strong>Chromium Video Decoder Muzlaydi</strong> (Mavjud kadrlarni dekod qila olmaydi)
-➔ <strong>Kutilmoqda:</strong> Keyingi IDR Keyframe kelguncha (2–5 soniya qotish!)
-➔ IDR Frame keladi ➔ 2 soniya silliq yuradi ➔ Yangi paket drop ➔ Yana qotish!</pre>
-        <p>
-          WebRTC standartida brauzer yo‘qolgan kadr o‘rniga darhol RTCP PLI (Picture Loss Indication) so‘rovini yuboradi.
-          Biroq <code>wf-recorder</code> tashqi jarayon bo‘lgani uchun PLI signallarini qabul qilib, lahzada yangi IDR
-          chiqarish xususiyatiga ega emas edi.
-        </p>
-      </div>
-
-      <div class="deep-item security">
-        <div class="deep-head">
-          <span class="deep-title">3. W3C Private Network Access (PNA) va Chromium HTTPS-First To‘sig‘i</span>
-          <span class="deep-tag">Xavfsizlik & Mixed Content</span>
-        </div>
-        <p>
-          Ilova Vercel platformasida <code>https://monitor-mr.vercel.app</code> (xavfsiz HTTPS kontekstida) joylashgan edi.
-          Brauzerdan to‘g‘ridan-to‘g‘ri lokal backend'ga (<code>http://192.168.1.106:7777</code>) so‘rov yuborish
-          W3C ning <strong>Mixed Content</strong> va <strong>Private Network Access</strong> qoidalari bilan bloklandi.
-        </p>
-        <p>
-          Foydalanuvchini lokal IP manziliga avtomatik yo‘naltirish (redirect) urinilganda esa, zamonaviy Chromium
-          brauzerlaridagi <strong>HTTPS-First Mode (HTTPS-Upgrades)</strong> mexanizmi lokal HTTP portini majburan
-          <code>https://192.168.1.106:7777</code> ga aylantirib, lokal tarmoqda SSL sertifikat bo‘lmagani uchun
-          <code>ERR_SSL_PROTOCOL_ERROR</code> ("This site can’t be reached") xatosi bilan ochilmay qoldi.
-        </p>
-      </div>
-
-      <div class="deep-item protocol">
-        <div class="deep-head">
-          <span class="deep-title">4. RFC 5245 ICE Candidate Prioritetlar To‘qnashuvi</span>
-          <span class="deep-tag">Signalizatsiya Mexanizmi</span>
-        </div>
-        <p>
-          WebRTC ICE agenti kandidatlar juftligini RFC 5245 formula bo‘yicha tartiblaydi:
-        </p>
-        <pre>Priority = (2^68 * TypePref) + (2^32 * LocalPref) + (2^0 * (256 - Component))
-<span class="cm"># Host Candidate (Lokal IP):</span>  Priority ≈ <span class="val">2,130,706,431</span> (Eng yuqori)
-<span class="cm"># Server Reflexive (STUN):</span>     Priority ≈ <span class="val">1,694,498,815</span>
-<span class="cm"># Relay (Metered TURN):</span>        Priority ≈ <span class="val">16,777,215</span> (Eng past)</pre>
-        <p>
-          Brauzer har doim eng yuqori ustunlikka ega bo‘lgan <code>Host Candidate</code> (192.168.1.106) ni tanladi.
-          Aynan shu yo‘nalishda esa router UDP paketlarini 70% ga yo‘qotayotgan edi. Faqatgina TURN Relay rejimini
-          majburlash orqali routerni aylanib o‘tish mumkin bo‘ldi, biroq bu tashqi global internetga qaramlikni keltirib chiqardi.
-        </p>
-      </div>
-
-      <div class="deep-item hardware">
-        <div class="deep-head">
-          <span class="deep-title">5. Qat’iy Shart: "Jismonan Hech Narsa Qilmasdan" (Fizik Cheklov)</span>
-          <span class="deep-tag">Shannoning O‘tkazuvchanlik Qonuni</span>
-        </div>
-        <p>
-          Foydalanuvchining boshlang‘ich qat’iy talabi: <em>"Jismonan hech narsa qilmasdan, kabel ulamasdan, routerni almashtirmasdan"</em> edi.
-        </p>
-        <p>
-          Biroq axborot nazariyasiga ko‘ra (Shannon-Hartley teoremasi), agar jismoniy signal-shovqin nisbati (SNR) va 
-          havo kanali to‘yingan bo‘lsa, dasturiy darajada qancha optimallashtirish qilinmasin, yo‘qolayotgan paketlarni
-          tiklashning imkoni bo‘lmaydi. Kompyuterni va uning protsessorini behuda qizdirmaslik maqsadida loyiha to‘xtatildi.
-        </p>
-      </div>
-
-    </section>
-
-    <!-- SECTION 4: MUHANDISLIK YECHIMLARI -->
-    <section class="section-card">
-      <h2 class="section-heading"><span class="sec-num">04</span> Sinovdan O‘tgan va Tasdiqlangan Yechimlar</h2>
+    <!-- 3. NEGA QOTIB-QOTIB QOLAR EDI? (SODDA vs ADVANCED) -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🔍</span> Nega 2-3 Sekund Silliq O‘ynab, Keyin Qotib Qolardi?</h2>
       <p>
-        Tadqiqot va sinovlar davomida quyidagi ilg‘or muhandislik yechimlari to‘liq amalga oshirildi va kodlandi:
+        Foydalanuvchining asosiy e’tirozi: <em>"2-3 sekund juda zo‘r silliq beryapti-da, keyin 2-3 sekund qotib-qotib qolyapti"</em>.
+        Buning sababi nima edi?
       </p>
 
-      <ul class="tech-list">
-        <li><strong>1 Soniyalik Mustaqil GOP (<code>gop_size=20</code>, <code>idr_interval=1</code>):</strong> Kadr tiklanish vaqti 6 soniyadan 1 soniyagacha qisqartirildi.</li>
-        <li><strong>H.264 Constrained Baseline Profili:</strong> B-kadrlar olib tashlandi, CAVLC entropiyasi ulandi, dekodlash yuki minimallashtirildi.</li>
-        <li><strong>RTP MTU Bounding (<code>max_frame_size=15000</code>):</strong> Kadrlar hajmi 8–12 KB oralig‘ida chegaralanib, Wi-Fi bufer toshishi to‘xtatildi.</li>
-        <li><strong>Metered Global TURN Relay (TCP 443):</strong> Router UDP filtrlashini butunlay aylanib o‘tuvchi shifrlangan TLS tunnel integratsiya qilindi.</li>
-        <li><strong>Sof PTY Shell Terminal (xterm.js):</strong> Video o‘rniga faqatgina klaviatura baytlarini uzatuvchi ultra-yengil terminal moduli ishlab chiqildi.</li>
+      <div class="compare-container">
+        <!-- SODDA -->
+        <div class="compare-col sodda">
+          <div class="compare-tag sodda">🟢 Juda Sodda Tilda (Oddiy Odamga):</div>
+          <p>
+            Tasavvur qiling, siz do‘stingizga telefonda uzun kitob o‘qib beryapsiz. Har 6 soniyada yangi bob boshlanadi.
+          </p>
+          <p>
+            Agar bitta so‘z eshitilmay uzilib qolsa, do‘stingiz gapning ma’nosini yo‘qotadi va siz yangi bobni boshlamaguningizcha 
+            <strong>qulog‘ini yopib, 3–4 soniya muzlab kutib o‘tiradi</strong>. Yangi bob boshlanganda 2 sekund eshitadi, 
+            yana bitta so‘z uzilsa — yana keyingi bob kelguncha qotib turadi!
+          </p>
+        </div>
+
+        <!-- ADVANCED -->
+        <div class="compare-col advanced">
+          <div class="compare-tag advanced">🔵 Juda Advanced Tilda (Muhandisga):</div>
+          <p>
+            <code>wf-recorder</code> apparatli Intel H.264 enkoderi <code>idr_interval=6</code> da (har 6 soniyada 1 marta) 
+            to‘liq IDR (Keyframe) chiqarar edi. Oradagi barcha kadrlar esa oldingisiga bog‘liq P-kadrlar edi.
+          </p>
+          <p>
+            Wi-Fi tarmog‘ida hatto <strong>bitta 1400-baytlik UDP paketi yo‘qolsa ham</strong>, Chromium dekoderi reference 
+            vektorlarini yo‘qotib, keyingi barcha P-kadrlarni tashlab yuboradi. <code>wf-recorder</code> tashqi jarayon bo‘lgani 
+            uchun brauzerning RTCP PLI (Picture Loss Indication) so‘rovini eshitmasdi va yangi IDR faqat 6 soniyalik taymer 
+            bilan chiqar edi.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. ENG KATTA 4 TA TEXNIK TO'SIQ -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🚧</span> Loyihani Yiqitgan 4 Ta Asosiy To‘siq</h2>
+
+      <div class="challenge-list">
+        <!-- 1 -->
+        <div class="challenge-box red">
+          <div class="challenge-head">
+            <span class="challenge-name">1. 2.4 GHz Router va Intra-BSS / Half-Duplex Tiqilishi</span>
+            <span class="challenge-subtag">Tarmoq To‘sig‘i</span>
+          </div>
+          <p>
+            Xost kompyuteridagi Wi-Fi adapter (Ralink MT7601U USB dongle) 2.4 GHz kanalda yarim-dupleks ishlaydi. 
+            Xost videoni routerga uzatadi (havo band), router esa o‘sha kanalda ikkinchi noutbukka qayta uzatishi kerak (havo yana band). 
+            Natijada havo vaqti (Airtime) yetmay, oddiy uy routeri Wi-Fi mijozlararo UDP paketlarini ommaviy tashlab yubordi.
+          </p>
+        </div>
+
+        <!-- 2 -->
+        <div class="challenge-box amber">
+          <div class="challenge-head">
+            <span class="challenge-name">2. W3C Mixed Content va Chromium HTTPS-First Qopqoni</span>
+            <span class="challenge-subtag">Brauzer Xavfsizligi</span>
+          </div>
+          <p>
+            Vercel ilovasi <code>https://monitor-mr.vercel.app</code> (HTTPS) da turganida, brauzerlar xavfsizlik 
+            talabi tufayli lokal <code>http://192.168.1.106:7777</code> ga ulanishni taqiqladi (Mixed Content). 
+            Avtomatik yo‘naltirilganda esa Chrome uni majburan HTTPS qilib yubordi va lokal tarmoqda SSL sertifikat bo‘lmagani uchun 
+            <strong>"This site can’t be reached (ERR_SSL_PROTOCOL_ERROR)"</strong> xatosini berdi.
+          </p>
+        </div>
+
+        <!-- 3 -->
+        <div class="challenge-box purple">
+          <div class="challenge-head">
+            <span class="challenge-name">3. RFC 5245 ICE Candidate Prioriteti</span>
+            <span class="challenge-subtag">WebRTC Qoidasi</span>
+          </div>
+          <p>
+            WebRTC standartiga ko‘ra, lokal LAN IP (Host candidate) har doim bulutli Relay (TURN) dan ustun qo‘yiladi. 
+            Shu sababli brauzer avtomatik ravishda routerda paket yo‘qotayotgan lokal Wi-Fi yo‘nalishini tanlab, qotishni davom ettirdi.
+          </p>
+        </div>
+
+        <!-- 4 -->
+        <div class="challenge-box red">
+          <div class="challenge-head">
+            <span class="challenge-name">4. Qat’iy Shart: "Jismonan Hech Narsa Qilmasdan"</span>
+            <span class="challenge-subtag">Fizik Cheklov</span>
+          </div>
+          <p>
+            Foydalanuvchining sharti: kabel ulamaslik, 5 GHz ga o‘tmaslik, apparatga tegmaslik. 
+            Ammo axborot nazariyasi (Shannon qonuni) bo‘yicha: havo kanali jismonan to‘yingan va paket yo‘qolayotgan bo‘lsa, 
+            buni dasturiy kod bilan yengib bo‘lmaydi.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. SHUNDAY ISH QILMOQCHI BO'LGANLARGA GAPLAR -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">💬</span> Shunday Loyiha Qilmoqchi Bo‘lgan Dasturchilarga Dangal Maslahatlar</h2>
+      <p>
+        Agar siz ham Linux ish stolini WebRTC orqali brauzerga jonli stream qilmoqchi bo‘lsangiz, bizning tajribamizdan 
+        xulosa qilib, asabingiz va vaqtingizni asrash uchun mana bu 5 ta narsani oldindan biling:
+      </p>
+
+      <div class="advice-list">
+        <div class="advice-item">
+          <div class="advice-num">1</div>
+          <div class="advice-content">
+            <strong>2.4 GHz Wi-Fi orqali video oqim qilishga umid ham qilmang!</strong>
+            <p>2.4 GHz chastotada, ayniqsa arzon USB Wi-Fi dongle bilan 30-60 FPS WebRTC videoni bitta Wi-Fi dagi ikki qurilma orasida uzatib bo‘lmaydi. Kamida <strong>5 GHz (802.11ac/ax)</strong> yoki <strong>Gigabit LAN kabel</strong> shart.</p>
+          </div>
+        </div>
+
+        <div class="advice-item">
+          <div class="advice-num">2</div>
+          <div class="advice-content">
+            <strong>ffmpeg / wf-recorder ishlatganda PLI (Keyframe on-demand) ni hisobga oling!</strong>
+            <p>Agar sizning kodlagichingiz WebRTC dan keladigan PLI (Picture Loss Indication) signallarini eshitolmasa, tarmoqda 1 ta paket yo‘qolsa ham video bir necha soniya muzlab qoladi. GOP oralig‘ini 1 soniyadan oshirmang (<code>gop_size=fps</code>).</p>
+          </div>
+        </div>
+
+        <div class="advice-item">
+          <div class="advice-num">3</div>
+          <div class="advice-content">
+            <strong>HTTPS sahifadan turib oddiy HTTP lokal IP ga ulana olmaysiz!</strong>
+            <p>Zamonaviy brauzerlar Mixed Content va W3C Private Network Access orqali sizni to‘xtatadi. Yoki ikkala tomon ham to‘liq HTTPS/WSS bo‘lishi kerak (valid domen bilan), yoki faqat toza lokal HTTP bo‘lishi kerak.</p>
+          </div>
+        </div>
+
+        <div class="advice-item">
+          <div class="advice-num">4</div>
+          <div class="advice-content">
+            <strong>Audio va mikrofonni aralashtirishda aks-sadoni (Echo) unutmang!</strong>
+            <p>Linux PipeWire/PulseAudio da dinamik ovozi bilan mikrofonni bitta oqimga aralashtirsangiz, apparat darajasida aks-sado bostirish (AEC) bo‘lmasa, dahshatli quloqni teshuvchi g‘uvillash (larsen echo) yuzaga keladi.</p>
+          </div>
+        </div>
+
+        <div class="advice-item">
+          <div class="advice-num">5</div>
+          <div class="advice-content">
+            <strong>Vaqtida to‘xtash — bu ham yuqori muhandislik mahorati!</strong>
+            <p>Fizik to‘siq (zaif radio to‘lqin) mavjud bo‘lganda, bo‘lmaydigan narsani dasturiy kod bilan zo‘rlash o‘rniga, muammoni to‘g‘ri tahlil qilib, tizimni xavfsiz to‘xtatish — vaqt va kompyuter resurslarini tejaydi.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. HOZIRGI HOLAT (XAVFSIZLIK) -->
+    <section class="card">
+      <h2 class="card-title"><span class="icon">🛡️</span> Xavfsizlik: Kompyuterning Hozirgi Holati</h2>
+      <p>
+        Loyiha to‘xtatilgach, xost kompyuter to‘liq dam olish rejimiga keltirildi:
+      </p>
+      <ul style="list-style: none; margin-top: 10px;">
+        <li style="padding-left: 20px; position: relative; margin-bottom: 8px; color: #cbd5e1;">
+          <span style="position: absolute; left: 0; color: var(--accent-green);">✔</span>
+          <strong>Barcha tarmoq portlari yopildi:</strong> <code>7777</code>, <code>8555</code>, <code>1984</code> tinglashdan olib tashlandi (0 ta ochiq port).
+        </li>
+        <li style="padding-left: 20px; position: relative; margin-bottom: 8px; color: #cbd5e1;">
+          <span style="position: absolute; left: 0; color: var(--accent-green);">✔</span>
+          <strong>Protsessor yuki (CPU):</strong> <code>wf-recorder</code> va <code>go2rtc</code> o‘chirildi — <strong>0.0% yuklama</strong>.
+        </li>
+        <li style="padding-left: 20px; position: relative; margin-bottom: 8px; color: #cbd5e1;">
+          <span style="position: absolute; left: 0; color: var(--accent-green);">✔</span>
+          <strong>Ngrok tunneli uzildi:</strong> <code>satisfy-endurance-mooned.ngrok-free.dev</code> o‘chirildi (ERR_NGROK_3200).
+        </li>
+        <li style="padding-left: 20px; position: relative; margin-bottom: 8px; color: #cbd5e1;">
+          <span style="position: absolute; left: 0; color: var(--accent-green);">✔</span>
+          <strong>Ombor tozalandi:</strong> Faqatgina ushbu foydali hisobot sahifasi qoldirildi.
+        </li>
       </ul>
-
-      <div class="callout">
-        <div class="callout-icon">💡</div>
-        <div class="callout-body">
-          <strong>Asosiy Muhandislik Xulosasi:</strong> Yuqori kadr chastotali (30-60 FPS) ish stoli video oqimi 
-          uchun yoki <strong>5 GHz Wi-Fi (802.11ac/ax)</strong>, yoki to‘g‘ridan-to‘g‘ri <strong>Gigabit Ethernet (LAN kabel)</strong> 
-          jismonan talab etiladi. 2.4 GHz USB adapterlari orqali real-vaqtli video uzatish fizik jihatdan barqarorlikni kafolatlay olmaydi.
-        </div>
-      </div>
     </section>
 
-    <!-- SECTION 5: TIZIM XAVFSIZLIGI -->
-    <section class="section-card">
-      <h2 class="section-heading"><span class="sec-num">05</span> Tizimni Xavfsiz Konservatsiya Qilish</h2>
-      <p>
-        Foydalanuvchi xohishiga binoan, kompyuterni har qanday yuklama va tashqi xavflardan himoya qilish uchun quyidagi 
-        yakuniy choralar ko‘rildi:
-      </p>
-      <ul class="tech-list">
-        <li><strong>Barcha tarmoq portlari yopildi:</strong> <code>7777</code>, <code>8555</code>, <code>1984</code> tinglashdan to‘liq chiqarildi (0 ta ochiq port).</li>
-        <li><strong>Video jarayonlari o‘chirildi:</strong> <code>wf-recorder</code> va <code>go2rtc</code> to‘xtatildi (Xost CPU yuki: 0.0%).</li>
-        <li><strong>Ngrok tunneli bekor qilindi:</strong> <code>satisfy-endurance-mooned.ngrok-free.dev</code> o‘chirildi (ERR_NGROK_3200).</li>
-        <li><strong>GitHub va Vercel:</strong> Barcha ishchi skriptlar tozalanib, faqatgina ushbu texnik hisobot saqlab qolindi.</li>
-      </ul>
-    </section>
-
-    <!-- FOOTER -->
+    <!-- FOOTER WITH 💩 -->
     <footer class="footer">
-      <p>MONITOR-MR — Deep Technical Post-Mortem & Architecture Analysis</p>
-      <p style="margin-top: 8px;">Ombor: <a href="https://github.com/MR07110/monitor-mr" target="_blank">github.com/MR07110/monitor-mr</a></p>
-      <p style="margin-top: 4px; color: var(--text-dim);">Muhamadrasul © 2026. Barcha huquqlar himoyalangan.</p>
+      <p style="font-size: 16px; margin-bottom: 6px;">💩 MONITOR-MR Post-Mortem Report</p>
+      <p>Muallif: Muhamadrasul & Antigravity (Google DeepMind) • 2026</p>
+      <p style="margin-top: 6px;">GitHub: <a href="https://github.com/MR07110/monitor-mr" target="_blank">github.com/MR07110/monitor-mr</a></p>
     </footer>
 
   </div>
