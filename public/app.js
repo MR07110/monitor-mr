@@ -542,6 +542,41 @@
     }
   }
 
+  function showToast(message, isError = false) {
+    let toast = document.getElementById('app-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-toast';
+      toast.style.position = 'fixed';
+      toast.style.bottom = '80px';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.backgroundColor = 'rgba(20, 20, 20, 0.94)';
+      toast.style.color = '#fff';
+      toast.style.padding = '10px 20px';
+      toast.style.borderRadius = '10px';
+      toast.style.fontSize = '14px';
+      toast.style.fontWeight = '500';
+      toast.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+      toast.style.border = '1px solid rgba(255,255,255,0.15)';
+      toast.style.zIndex = '99999';
+      toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+      toast.style.pointerEvents = 'none';
+      toast.style.textAlign = 'center';
+      toast.style.maxWidth = '90vw';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.borderColor = isError ? 'rgba(239, 68, 68, 0.7)' : 'rgba(34, 197, 94, 0.7)';
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(toast._tid);
+    toast._tid = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
+    }, 4000);
+  }
+
   function updateMicUI(active) {
     if (!barMicBtn) return;
     if (active) {
@@ -553,11 +588,31 @@
 
   async function toggleMic() {
     if (!videoEl) return;
+    if (!window.isSecureContext && !navigator.mediaDevices) {
+      showToast("⚠️ Brauzer mikrofonga faqat HTTPS (Vercel) orqali ruxsat beradi!", true);
+      return;
+    }
+    let res = false;
     if (typeof videoEl.toggleMic === 'function') {
-      isMicActive = await videoEl.toggleMic();
+      res = await videoEl.toggleMic();
     } else if (typeof videoEl.setMicEnabled === 'function') {
       isMicActive = !isMicActive;
       videoEl.setMicEnabled(isMicActive);
+      res = isMicActive;
+    }
+    if (res === 'insecure') {
+      showToast("⚠️ Brauzer mikrofonga faqat HTTPS (Vercel) orqali ruxsat beradi!", true);
+      isMicActive = false;
+    } else if (res === false && (!videoEl.micStream || !videoEl.micStream.active)) {
+      showToast("❌ Mikrofon ruxsati berilmadi yoki mavjud emas", true);
+      isMicActive = false;
+    } else {
+      isMicActive = !!res;
+      if (isMicActive) {
+        showToast("🎤 Mikrofon yoqildi — Ovoz kompyuter karnayidan eshitilmoqda");
+      } else {
+        showToast("🔇 Mikrofon o'chirildi");
+      }
     }
     updateMicUI(isMicActive);
   }
@@ -723,6 +778,16 @@
     showSplash();
     showView('screen-view');
     startStream();
+
+    // User gesture vaqtida mikrofon ruxsatini brauzerdan so'rash
+    if (videoEl && typeof videoEl.initMicrophone === 'function') {
+      videoEl.initMicrophone().then(stream => {
+        if (stream) {
+          updateMicUI(true);
+        }
+      }).catch(() => {});
+    }
+
     try {
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
       if (innerVideo) {

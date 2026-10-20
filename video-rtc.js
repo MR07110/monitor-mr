@@ -670,6 +670,34 @@ class VideoRTC extends HTMLElement {
         }
     }
 
+    async initMicrophone() {
+        if (this.micStream && this.micStream.active) return this.micStream;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.warn('[VideoRTC] getUserMedia qo‘llab-quvvatlanmaydi (HTTPS kerak)');
+            return null;
+        }
+        try {
+            this.micStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1
+                }
+            });
+            const track = this.micStream.getAudioTracks()[0];
+            if (track && this.micTransceiver && this.micTransceiver.sender) {
+                await this.micTransceiver.sender.replaceTrack(track);
+            }
+            this.micEnabled = true;
+            this.setMicEnabled(true);
+            return this.micStream;
+        } catch (e) {
+            console.warn('[VideoRTC] Mikrofon ruxsati rad etildi yoki xatolik:', e);
+            return null;
+        }
+    }
+
     /**
      * @param pc {RTCPeerConnection}
      * @return {Promise<RTCSessionDescriptionInit>}
@@ -677,8 +705,14 @@ class VideoRTC extends HTMLElement {
     async createOffer(pc) {
         try {
             if (this.media.includes('microphone')) {
-                // Mikrofonni oldindan so'ramaymiz: silent trek bilan sendonly oqim ochiladi, keyin replaceTrack qilinadi
-                const initialTrack = this.micStream ? this.micStream.getAudioTracks()[0] : this._getSilentTrack();
+                // Brauzerdan mikrofon ruxsatini olishga urinib ko'ramiz
+                if (!this.micStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    try {
+                        await this.initMicrophone();
+                    } catch (_) {}
+                }
+
+                const initialTrack = (this.micStream && this.micStream.active) ? this.micStream.getAudioTracks()[0] : this._getSilentTrack();
                 if (initialTrack) {
                     this.micTransceiver = pc.addTransceiver(initialTrack, {direction: 'sendonly'});
                 } else {
@@ -724,29 +758,15 @@ class VideoRTC extends HTMLElement {
     }
 
     async toggleMic() {
-        if (!this.micStream) {
-            try {
-                this.micStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true,
-                        channelCount: 1
-                    }
-                });
-                const track = this.micStream.getAudioTracks()[0];
-                if (track && this.micTransceiver && this.micTransceiver.sender) {
-                    await this.micTransceiver.sender.replaceTrack(track);
-                } else if (track && this.pc) {
-                    this.pc.addTrack(track, this.micStream);
+        if (!this.micStream || !this.micStream.active) {
+            const stream = await this.initMicrophone();
+            if (!stream) {
+                if (!window.isSecureContext) {
+                    return 'insecure';
                 }
-                this.micEnabled = true;
-                this.setMicEnabled(true);
-                return true;
-            } catch (e) {
-                console.warn('[VideoRTC] mic permission denied:', e);
                 return false;
             }
+            return true;
         }
 
         const nextState = !this.micEnabled;
