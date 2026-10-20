@@ -1404,11 +1404,12 @@
     });
   }
 
-  // Bottombar -> Shell
+  // Bottombar -> Original PTY Terminal
   if (barShellBtn) {
     barShellBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      showView('shell-view');
+      showView('pty-view');
+      initPtyTerminal();
     });
   }
 

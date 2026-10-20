@@ -1052,9 +1052,9 @@ video-rtc,
 }
 
 .pty-terminal-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   width: 100%;
-  height: calc(100% - 42px - 38px);
   position: relative;
   background: #000000;
   overflow: hidden;
@@ -1076,6 +1076,7 @@ video-rtc,
   background-color: #000000 !important;
 }
 
+/* Mobil va planshetlarda virtual tugmalar (bottombar) ko'rsatiladi */
 .pty-virtual-keys {
   height: 38px;
   min-height: 38px;
@@ -1089,6 +1090,19 @@ video-rtc,
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   z-index: 10;
+  flex-shrink: 0;
+}
+
+/* Desktop kompyuterlarda virtual bottombar ko'rsatilmaydi */
+@media (min-width: 1025px) {
+  .pty-virtual-keys {
+    display: none !important;
+  }
+}
+@media (hover: none) and (pointer: coarse) {
+  .pty-virtual-keys {
+    display: flex !important;
+  }
 }
 
 .pty-key-btn {
