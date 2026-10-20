@@ -39,10 +39,10 @@ class VideoRTC extends HTMLElement {
         this.mode = 'webrtc';
 
         /**
-         * [Config] Requested medias (video, audio, microphone).
+         * [Config] Requested medias (pure video only).
          * @type {string}
          */
-        this.media = 'video,audio,microphone';
+        this.media = 'video';
 
         /**
          * [config] Run stream when not displayed on the screen. Default `false`.

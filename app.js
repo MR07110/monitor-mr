@@ -763,7 +763,7 @@
     try {
       const streamUrl = getStreamUrl();
       videoEl.mode = 'webrtc';
-      videoEl.media = 'video,audio,microphone';
+      videoEl.media = 'video';
       videoEl.src = streamUrl;
 
       const triggerPlay = () => {
