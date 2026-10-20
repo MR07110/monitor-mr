@@ -725,13 +725,7 @@ class VideoRTC extends HTMLElement {
     async createOffer(pc) {
         try {
             if (this.media.includes('microphone')) {
-                // Brauzerdan mikrofon ruxsatini olishga urinib ko'ramiz
-                if (!this.micStream && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    try {
-                        await this.initMicrophone();
-                    } catch (_) {}
-                }
-
+                // Mikrofonni orqa fonda tayyorlab qo'yamiz, video ochilishini to'xtatib qo'ymaymiz
                 const initialTrack = (this.micStream && this.micStream.active) ? this.micStream.getAudioTracks()[0] : this._getSilentTrack();
                 if (initialTrack) {
                     this.micTransceiver = pc.addTransceiver(initialTrack, {direction: 'sendonly'});

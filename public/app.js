@@ -173,14 +173,7 @@
   }
 
   function updateLanTip(lanUrl) {
-    if (!netTip || !localWifiLink) return;
-    const isAlreadyLocal = window.location.hostname.startsWith('192.168.') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (!isAlreadyLocal && lanUrl) {
-      localWifiLink.href = lanUrl;
-      netTip.classList.remove('hidden');
-    } else {
-      netTip.classList.add('hidden');
-    }
+    if (netTip) netTip.classList.add('hidden');
   }
 
   function showWelcomeView(username) {
@@ -782,15 +775,6 @@
     showSplash();
     showView('screen-view');
     startStream();
-
-    // User gesture vaqtida mikrofon ruxsatini brauzerdan so'rash
-    if (videoEl && typeof videoEl.initMicrophone === 'function') {
-      videoEl.initMicrophone().then(stream => {
-        if (stream) {
-          updateMicUI(true);
-        }
-      }).catch(() => {});
-    }
 
     try {
       const innerVideo = videoEl.video || (videoEl.querySelector ? videoEl.querySelector('video') : null);
