@@ -566,6 +566,18 @@ class VideoRTC extends HTMLElement {
                 });
             }
             this.play();
+            if (!this._liveSyncBound) {
+                this._liveSyncBound = true;
+                this.video.addEventListener('timeupdate', () => {
+                    if (this.video.buffered && this.video.buffered.length > 0) {
+                        const end = this.video.buffered.end(this.video.buffered.length - 1);
+                        const diff = end - this.video.currentTime;
+                        if (diff > 0.20) {
+                            this.video.currentTime = end;
+                        }
+                    }
+                });
+            }
             this.dispatchEvent(new CustomEvent('webrtc-track', { detail: { kind: ev.track ? ev.track.kind : 'unknown' } }));
             this.pcState = WebSocket.OPEN;
         };

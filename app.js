@@ -274,15 +274,21 @@
     showView('login-view');
   }
 
+  function isLocalHostName(h) {
+    return h === 'localhost' || h === '127.0.0.1' || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h) || h.endsWith('.local');
+  }
+
   function getHost() {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const h = window.location.hostname;
+    if (isLocalHostName(h)) {
       return window.location.host;
     }
     return remoteHost || localStorage.getItem('remote_desk_host') || window.location.host;
   }
 
   function getApiUrl(path) {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const h = window.location.hostname;
+    if (isLocalHostName(h)) {
       return path;
     }
     return `${window.location.protocol}//${getHost()}${path}`;
