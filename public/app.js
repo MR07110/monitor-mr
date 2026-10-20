@@ -184,6 +184,36 @@
   }
 
   // ================= 6. KONFIGURATSIYA VA AVTORIZATSIYA TEKSHIRUVI =================
+  function checkLocalWifi(lanHost, timeoutMs = 700) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      let done = false;
+      const timer = setTimeout(() => {
+        if (!done) {
+          done = true;
+          img.src = '';
+          resolve(false);
+        }
+      }, timeoutMs);
+
+      img.onload = () => {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          resolve(true);
+        }
+      };
+      img.src = `http://${lanHost}/favicon.svg?_t=${Date.now()}`;
+    });
+  }
+
   async function initConfig() {
     const params = new URLSearchParams(window.location.search);
     const qHost = params.get('host') || params.get('h');
@@ -192,6 +222,13 @@
       localStorage.setItem('remote_desk_host', remoteHost);
     }
 
+    const qToken = params.get('token') || params.get('t');
+    if (qToken) {
+      authToken = qToken;
+      localStorage.setItem('desktop_auth_token', qToken);
+    }
+
+    let lanHost = '192.168.1.106:7777';
     if (!remoteHost) {
       try {
         const res = await fetch('/api/config');
@@ -201,8 +238,27 @@
             remoteHost = data.host.replace(/^https?:\/\//, '').replace(/\/$/, '');
             localStorage.setItem('remote_desk_host', remoteHost);
           }
+          if (data && data.lanHost) {
+            lanHost = data.lanHost;
+          }
         }
       } catch (e) {}
+    }
+
+    // Uydan Vercel orqali kirilganda avtomatik lokal Wi-Fi (0ms) ga o'tish
+    const isCloudMode = params.get('cloud') === '1' || params.get('stay') === '1';
+    if (!isLocalHostName(window.location.hostname) && !isCloudMode) {
+      checkLocalWifi(lanHost).then(isHome => {
+        if (isHome) {
+          console.log('[AutoLAN] Uy Wi-Fi tarmog‘i aniqlandi! Avtomatik lokal tezlikka o‘tilmoqda...');
+          showToast('🏠 Uy Wi-Fi aniqlandi. Maksimal lokal tezlikka o‘tilmoqda...', false);
+          const currentToken = localStorage.getItem('desktop_auth_token') || authToken || '';
+          const tokenParam = currentToken ? `?token=${encodeURIComponent(currentToken)}` : '';
+          setTimeout(() => {
+            window.location.replace(`http://${lanHost}/desktop${tokenParam}`);
+          }, 300);
+        }
+      });
     }
 
     const savedToken = localStorage.getItem('desktop_auth_token');
@@ -1513,6 +1569,23 @@
           if (data.lanUrl) {
             updateLanTip(data.lanUrl);
           }
+
+          const isCloudMode = new URLSearchParams(window.location.search).get('cloud') === '1';
+          if (!isLocalHostName(window.location.hostname) && !isCloudMode) {
+            const destHost = data.lanIp ? `${data.lanIp}:7777` : '192.168.1.106:7777';
+            checkLocalWifi(destHost).then(isHome => {
+              if (isHome) {
+                showToast('🏠 Uy Wi-Fi aniqlandi. Maksimal lokal tezlikka o‘tilmoqda...', false);
+                setTimeout(() => {
+                  window.location.replace(`http://${destHost}/desktop?token=${encodeURIComponent(authToken)}`);
+                }, 300);
+                return;
+              }
+              showWelcomeView(currentUsername);
+            });
+            return;
+          }
+
           showWelcomeView(currentUsername);
         } else {
           if (data.retryAfterSeconds) {
