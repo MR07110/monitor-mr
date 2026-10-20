@@ -684,12 +684,20 @@ class VideoRTC extends HTMLElement {
 
     async initMicrophone() {
         if (this.micStream && this.micStream.active) return this.micStream;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.warn('[VideoRTC] getUserMedia qo‘llab-quvvatlanmaydi (HTTPS kerak)');
-            return null;
-        }
+
+        const getUserMediaFn = (constraints) => {
+            if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+                return navigator.mediaDevices.getUserMedia(constraints);
+            }
+            const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+            if (typeof legacy === 'function') {
+                return new Promise((resolve, reject) => legacy.call(navigator, constraints, resolve, reject));
+            }
+            return Promise.reject(new Error('Mikrofon API mavjud emas'));
+        };
+
         try {
-            this.micStream = await navigator.mediaDevices.getUserMedia({
+            this.micStream = await getUserMediaFn({
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
@@ -705,7 +713,7 @@ class VideoRTC extends HTMLElement {
             this.setMicEnabled(true);
             return this.micStream;
         } catch (e) {
-            console.warn('[VideoRTC] Mikrofon ruxsati rad etildi yoki xatolik:', e);
+            console.warn('[VideoRTC] Mikrofon xatosi:', e);
             return null;
         }
     }
@@ -773,9 +781,6 @@ class VideoRTC extends HTMLElement {
         if (!this.micStream || !this.micStream.active) {
             const stream = await this.initMicrophone();
             if (!stream) {
-                if (!window.isSecureContext) {
-                    return 'insecure';
-                }
                 return false;
             }
             return true;

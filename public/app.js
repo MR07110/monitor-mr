@@ -594,10 +594,6 @@
 
   async function toggleMic() {
     if (!videoEl) return;
-    if (!window.isSecureContext && !navigator.mediaDevices) {
-      showToast("⚠️ Brauzer mikrofonga faqat HTTPS (Vercel) orqali ruxsat beradi!", true);
-      return;
-    }
     let res = false;
     if (typeof videoEl.toggleMic === 'function') {
       res = await videoEl.toggleMic();
@@ -606,11 +602,13 @@
       videoEl.setMicEnabled(isMicActive);
       res = isMicActive;
     }
-    if (res === 'insecure') {
-      showToast("⚠️ Brauzer mikrofonga faqat HTTPS (Vercel) orqali ruxsat beradi!", true);
-      isMicActive = false;
-    } else if (res === false && (!videoEl.micStream || !videoEl.micStream.active)) {
-      showToast("❌ Mikrofon ruxsati berilmadi yoki mavjud emas", true);
+
+    if (!res && (!videoEl.micStream || !videoEl.micStream.active)) {
+      if (window.location.protocol === 'http:' && !window.isSecureContext) {
+        showToast("🔒 Mikrofon uchun: https://" + window.location.hostname + ":7443 orqali kiring", true);
+      } else {
+        showToast("❌ Mikrofon ruxsati berilmadi yoki mavjud emas", true);
+      }
       isMicActive = false;
     } else {
       isMicActive = !!res;
