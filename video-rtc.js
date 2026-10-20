@@ -554,16 +554,6 @@ class VideoRTC extends HTMLElement {
                     }
                 });
             }
-            if (ev.receiver) {
-                try {
-                    if ('playoutDelayHint' in ev.receiver) {
-                        ev.receiver.playoutDelayHint = 0.06;
-                    }
-                    if ('jitterBufferTarget' in ev.receiver) {
-                        ev.receiver.jitterBufferTarget = 60;
-                    }
-                } catch (_) {}
-            }
             this.play();
             this.dispatchEvent(new CustomEvent('webrtc-track', { detail: { kind: ev.track ? ev.track.kind : 'unknown' } }));
             this.pcState = WebSocket.OPEN;
